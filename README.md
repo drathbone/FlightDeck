@@ -15,3 +15,5 @@ Code is written in C++ (Arduino) using a number of tools: Arduino IDE, EEZ Studi
 No detailed instructions provided yet as this is a very early development phase, however once I feel it's ready I'll do a full write-up including a hardware build and configuration guide.
 
 I've included a few design guides that I'm loosely following, and there are STLs for the 3D printed case (in three parts; front cover, rear cover, and optional stand).
+
+
