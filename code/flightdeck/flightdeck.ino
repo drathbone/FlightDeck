@@ -36,7 +36,21 @@ void RotaryBottom_TurnLeft();
 void RotaryBottom_TurnRight();
 void RotaryBottom_ButtonPressed();
 
+// This block is a helper to change label/text colours depending on off/standby/active status
+#define COL_OFF  lv_color_hex(0xE5E7EB)  // grey
+#define COL_ARM  lv_color_hex(0xF59E0B)  // amber
+#define COL_ACT  lv_color_hex(0x22D3EE)  // cyan
 
+typedef enum { MODE_OFF = 0, MODE_ARMED = 1, MODE_ACTIVE = 2 } mode_state_t;
+
+static inline void set_ap_button(lv_obj_t* container, lv_obj_t* label, mode_state_t state) {
+    lv_color_t c = (state == MODE_ACTIVE) ? COL_ACT :
+                   (state == MODE_ARMED)  ? COL_ARM : COL_OFF;
+
+    lv_obj_set_style_outline_color(container, c, LV_PART_MAIN);
+    lv_obj_set_style_text_color(label, c, LV_PART_MAIN);
+}
+// ---END---
 
 // ---- Encoder helper ----
 struct RotaryEncoder {
@@ -438,6 +452,9 @@ void RotaryBottom_ButtonPressed() {
 void onSpadChange(SpadNextSerial::DataId id, float v) {
   static float fdA = NAN;  // AUTOPILOT FLIGHT DIRECTOR ACTIVE
   static float fdB = NAN;  // AUTOPILOT FLIGHT DIRECTOR
+  static bool fd1 = false, fd2 = false;     // only needed if you subscribed to FD :1 and :2
+  static bool aprArmed = false;             // needs DID_APR_ARMED subscription
+  static bool aprActive = false;            // needs DID_APR_ACTIVE subscription
   switch (id) {
     case SpadNextSerial::DID_COM1_ACT: {
       static char com1ActStr[16];
@@ -511,58 +528,52 @@ void onSpadChange(SpadNextSerial::DataId id, float v) {
       set_var_v_apias(iasStr);
       break;
     }
-    case SpadNextSerial::DID_AP_MASTER_STATE:
-      DBG.printf("[AP] MASTER   = %s\n", (v >= 0.5f) ? "ON" : "OFF");
-      break;
-
-//    case SpadNextSerial::DID_FD_STATE:
-//      DBG.printf("[AP] FD = %s\n", (v >= 0.5f) ? "ON" : "OFF");
-//      break;
-
-    case SpadNextSerial::DID_FD_STATE_2: {
-      // keep simple function-scope statics to remember latest values
-      static float fd1 = NAN, fd2 = NAN;
-      if (id == SpadNextSerial::DID_FD_STATE_1) fd1 = v; else fd2 = v;
-      bool fdOn = (fd1 >= 0.5f) || (fd2 >= 0.5f);
-      DBG.printf("[AP] FD = %s\n", fdOn ? "ON" : "OFF");
-      // set_var_b_fd(fdOn);  // when you wire the LED
-      break;
-    }
-
-    case SpadNextSerial::DID_FD_STATE_1: {
-      // keep simple function-scope statics to remember latest values
-      static float fd1 = NAN, fd2 = NAN;
-      if (id == SpadNextSerial::DID_FD_STATE_1) fd1 = v; else fd2 = v;
-      bool fdOn = (fd1 >= 0.5f) || (fd2 >= 0.5f);
-      DBG.printf("[AP] FD = %s\n", fdOn ? "ON" : "OFF");
-      // set_var_b_fd(fdOn);  // when you wire the LED
-      break;
-    }
     
+    // -------- AP master (ON/OFF -> ACTIVE/OFF) --------
+    case SpadNextSerial::DID_AP_MASTER_STATE:
+      set_ap_button(objects.b_ap,  objects.obj18, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
 
+    // -------- Flight Director (pick one of these sections) --------
+    // If you subscribed to indexed FD :1 and :2 (recommended for broad compatibility):
+    case SpadNextSerial::DID_FD_STATE_1:
+      fd1 = (v >= 0.5f);
+      set_ap_button(objects.b_fd,  objects.obj19, (fd1 || fd2) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    case SpadNextSerial::DID_FD_STATE_2:
+      fd2 = (v >= 0.5f);
+      set_ap_button(objects.b_fd,  objects.obj19, (fd1 || fd2) ? MODE_ACTIVE : MODE_OFF);
+      break;
 
+    // -------- Lateral / vertical modes (ACTIVE/OFF) --------
     case SpadNextSerial::DID_AP_HDG_MODE:
-      DBG.printf("[AP] HDG MODE = %s\n", (v >= 0.5f) ? "ACTIVE" : "OFF");
+      set_ap_button(objects.b_hdg, objects.obj20, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
       break;
 
     case SpadNextSerial::DID_AP_NAV_MODE:
-      DBG.printf("[AP] NAV MODE = %s\n", (v >= 0.5f) ? "ACTIVE" : "OFF");
+      set_ap_button(objects.b_nav, objects.obj21, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
       break;
 
     case SpadNextSerial::DID_AP_ALT_MODE:
-      DBG.printf("[AP] ALT MODE = %s\n", (v >= 0.5f) ? "ACTIVE" : "OFF");
+      set_ap_button(objects.b_alt, objects.obj22, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
       break;
 
     case SpadNextSerial::DID_AP_VS_MODE:
-      DBG.printf("[AP] VS MODE  = %s\n", (v >= 0.5f) ? "ACTIVE" : "OFF");
+      set_ap_button(objects.b_vs,  objects.obj23,  (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
       break;
 
+    // -------- APR has ARMED (amber) vs ACTIVE (cyan) --------
     case SpadNextSerial::DID_APR_ARMED:
-      DBG.printf("[AP] APR      = %s\n", (v >= 0.5f) ? "ARMED" : "—");
+      aprArmed = (v >= 0.5f);
+      // show amber only when not active
+      set_ap_button(objects.b_apr, objects.obj24,
+                    aprActive ? MODE_ACTIVE : (aprArmed ? MODE_ARMED : MODE_OFF));
       break;
 
     case SpadNextSerial::DID_APR_ACTIVE:
-      DBG.printf("[AP] APR      = %s\n", (v >= 0.5f) ? "ACTIVE" : "—");
+      aprActive = (v >= 0.5f);
+      set_ap_button(objects.b_apr, objects.obj24,
+                    aprActive ? MODE_ACTIVE : (aprArmed ? MODE_ARMED : MODE_OFF));
       break;
 
     default: break;
