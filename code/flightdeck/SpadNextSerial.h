@@ -12,7 +12,17 @@ public:
     DID_NAV2_ACT = 107, DID_NAV2_STB = 108,
     DID_SIM_RATE = 109, DID_ACTIVE_PAUSE = 110,
     DID_AP_HDG = 201,   DID_AP_ALT = 202,
-    DID_AP_VS  = 203,   DID_AP_IAS = 204
+    DID_AP_VS  = 203,   DID_AP_IAS = 204,
+    DID_AP_MASTER_STATE = 205,
+    //DID_FD_STATE        = 206,
+    DID_AP_HDG_MODE     = 207,
+    DID_AP_NAV_MODE     = 208,
+    DID_AP_ALT_MODE     = 209,
+    DID_AP_VS_MODE      = 210,
+    DID_APR_ACTIVE      = 211,
+    DID_APR_ARMED       = 212,
+    DID_FD_STATE_1      = 213,
+    DID_FD_STATE_2      = 214,
   };
 
   using ChangeHandler = void (*)(DataId id, float value);
@@ -80,6 +90,14 @@ public:
   void apIASInc();                void apIASDec();
   void apIASSetKnots(long kts);
 
+  void apMasterToggle();
+  void flightDirectorToggle();
+  void apHeadingToggle();
+  void apNavToggle();
+  void apAltHoldToggle();
+  void apVsHoldToggle();
+  void apApproachToggle();
+
   // ---- (Optional) Set your own fixed GUID and firmware version ----
   // If not set, defaults (constant GUID + "1.0") are used.
   void setDeviceGuid(const char* guid);        // e.g. "{12345678-90AB-CDEF-1234-567890ABCDEF}"
@@ -95,6 +113,9 @@ private:
   float _apAltFt        = NAN;
   float _apVSFPM        = NAN;
   float _apIASkt        = NAN;
+  float _apMaster = NAN, _fdState = NAN;
+  float _apHdgMode = NAN, _apNavMode = NAN, _apAltMode = NAN, _apVsMode = NAN;
+  float _aprActive = NAN, _aprArmed = NAN;
 
   // Handshake reply: 0,SPAD,<Guid>,<Name>,<SerialVersion>,<DeviceVersion>[,options...];
   void _sendInitReply();
@@ -144,6 +165,8 @@ private:
   float _nav1ActiveMHz  = NAN, _nav1StandbyMHz = NAN;
   float _nav2ActiveMHz  = NAN, _nav2StandbyMHz = NAN;
   float _simRate        = NAN;
+
+  float _fd1 = NAN, _fd2 = NAN;
 
   ChangeHandler _onChange = nullptr;
 };

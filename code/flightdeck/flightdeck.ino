@@ -436,6 +436,8 @@ void RotaryBottom_ButtonPressed() {
 
 // spad.next functions
 void onSpadChange(SpadNextSerial::DataId id, float v) {
+  static float fdA = NAN;  // AUTOPILOT FLIGHT DIRECTOR ACTIVE
+  static float fdB = NAN;  // AUTOPILOT FLIGHT DIRECTOR
   switch (id) {
     case SpadNextSerial::DID_COM1_ACT: {
       static char com1ActStr[16];
@@ -509,6 +511,60 @@ void onSpadChange(SpadNextSerial::DataId id, float v) {
       set_var_v_apias(iasStr);
       break;
     }
+    case SpadNextSerial::DID_AP_MASTER_STATE:
+      DBG.printf("[AP] MASTER   = %s\n", (v >= 0.5f) ? "ON" : "OFF");
+      break;
+
+//    case SpadNextSerial::DID_FD_STATE:
+//      DBG.printf("[AP] FD = %s\n", (v >= 0.5f) ? "ON" : "OFF");
+//      break;
+
+    case SpadNextSerial::DID_FD_STATE_2: {
+      // keep simple function-scope statics to remember latest values
+      static float fd1 = NAN, fd2 = NAN;
+      if (id == SpadNextSerial::DID_FD_STATE_1) fd1 = v; else fd2 = v;
+      bool fdOn = (fd1 >= 0.5f) || (fd2 >= 0.5f);
+      DBG.printf("[AP] FD = %s\n", fdOn ? "ON" : "OFF");
+      // set_var_b_fd(fdOn);  // when you wire the LED
+      break;
+    }
+
+    case SpadNextSerial::DID_FD_STATE_1: {
+      // keep simple function-scope statics to remember latest values
+      static float fd1 = NAN, fd2 = NAN;
+      if (id == SpadNextSerial::DID_FD_STATE_1) fd1 = v; else fd2 = v;
+      bool fdOn = (fd1 >= 0.5f) || (fd2 >= 0.5f);
+      DBG.printf("[AP] FD = %s\n", fdOn ? "ON" : "OFF");
+      // set_var_b_fd(fdOn);  // when you wire the LED
+      break;
+    }
+    
+
+
+    case SpadNextSerial::DID_AP_HDG_MODE:
+      DBG.printf("[AP] HDG MODE = %s\n", (v >= 0.5f) ? "ACTIVE" : "OFF");
+      break;
+
+    case SpadNextSerial::DID_AP_NAV_MODE:
+      DBG.printf("[AP] NAV MODE = %s\n", (v >= 0.5f) ? "ACTIVE" : "OFF");
+      break;
+
+    case SpadNextSerial::DID_AP_ALT_MODE:
+      DBG.printf("[AP] ALT MODE = %s\n", (v >= 0.5f) ? "ACTIVE" : "OFF");
+      break;
+
+    case SpadNextSerial::DID_AP_VS_MODE:
+      DBG.printf("[AP] VS MODE  = %s\n", (v >= 0.5f) ? "ACTIVE" : "OFF");
+      break;
+
+    case SpadNextSerial::DID_APR_ARMED:
+      DBG.printf("[AP] APR      = %s\n", (v >= 0.5f) ? "ARMED" : "—");
+      break;
+
+    case SpadNextSerial::DID_APR_ACTIVE:
+      DBG.printf("[AP] APR      = %s\n", (v >= 0.5f) ? "ACTIVE" : "—");
+      break;
+
     default: break;
   }
 }

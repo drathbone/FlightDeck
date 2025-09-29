@@ -115,6 +115,16 @@ void SpadNextSerial::_processMessage(char* msg) {
       case DID_AP_ALT:       _emitIfChanged(DID_AP_ALT, _apAltFt,   val, 1.0f); break;
       case DID_AP_VS:        _emitIfChanged(DID_AP_VS,  _apVSFPM,   val, 10.0f); break;
       case DID_AP_IAS:       _emitIfChanged(DID_AP_IAS, _apIASkt,   val, 0.5f); break;
+      case DID_AP_MASTER_STATE: _emitIfChanged(DID_AP_MASTER_STATE, _apMaster,  val, 0.5f); break;
+      //case DID_FD_STATE:     _emitIfChanged(DID_FD_STATE, _fdState, val, 0.5f); break;
+      case DID_FD_STATE_1: _emitIfChanged(DID_FD_STATE_1, _fd1, val, 0.5f); break;
+      case DID_FD_STATE_2: _emitIfChanged(DID_FD_STATE_2, _fd2, val, 0.5f); break;
+      case DID_AP_HDG_MODE:     _emitIfChanged(DID_AP_HDG_MODE,     _apHdgMode, val, 0.5f); break;
+      case DID_AP_NAV_MODE:     _emitIfChanged(DID_AP_NAV_MODE,     _apNavMode, val, 0.5f); break;
+      case DID_AP_ALT_MODE:     _emitIfChanged(DID_AP_ALT_MODE,     _apAltMode, val, 0.5f); break;
+      case DID_AP_VS_MODE:      _emitIfChanged(DID_AP_VS_MODE,      _apVsMode,  val, 0.5f); break;
+      case DID_APR_ACTIVE:      _emitIfChanged(DID_APR_ACTIVE,      _aprActive, val, 0.5f); break;
+      case DID_APR_ARMED:       _emitIfChanged(DID_APR_ARMED,       _aprArmed,  val, 0.5f); break;
 
       default: break;
     }
@@ -160,6 +170,18 @@ void SpadNextSerial::_doSubscriptions() {
   _subscribe(DID_AP_ALT, "SIMCONNECT:AUTOPILOT ALTITUDE LOCK VAR", "Feet");
   _subscribe(DID_AP_VS,  "SIMCONNECT:AUTOPILOT VERTICAL HOLD VAR", "Feet per minute");
   _subscribe(DID_AP_IAS, "SIMCONNECT:AUTOPILOT AIRSPEED HOLD VAR", "Knots");
+
+  // AP Toggles
+  _subscribe(DID_AP_MASTER_STATE, "SIMCONNECT:AUTOPILOT MASTER");
+  _subscribe(DID_AP_HDG_MODE,     "SIMCONNECT:AUTOPILOT HEADING LOCK");
+  _subscribe(DID_AP_NAV_MODE,     "SIMCONNECT:AUTOPILOT NAV1 LOCK");
+  _subscribe(DID_AP_ALT_MODE,     "SIMCONNECT:AUTOPILOT ALTITUDE LOCK");
+  _subscribe(DID_AP_VS_MODE,      "SIMCONNECT:AUTOPILOT VERTICAL HOLD");
+  _subscribe(DID_APR_ACTIVE,      "SIMCONNECT:AUTOPILOT APPROACH HOLD");
+  _subscribe(DID_APR_ARMED,       "SIMCONNECT:AUTOPILOT APPROACH ARM");
+  //_subscribe(DID_FD_STATE,        "SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE");
+  _subscribe(DID_FD_STATE_1, "SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE:1");
+  _subscribe(DID_FD_STATE_2, "SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE:2");
 }
 
 // ---------------- send helpers ----------------
@@ -272,3 +294,12 @@ void SpadNextSerial::apVSSetFPM(long fpm)   { _sendEvent("AP_VS_VAR_SET_ENGLISH"
 void SpadNextSerial::apIASInc()             { _sendEvent("AP_SPD_VAR_INC"); }
 void SpadNextSerial::apIASDec()             { _sendEvent("AP_SPD_VAR_DEC"); }
 void SpadNextSerial::apIASSetKnots(long kts){ _sendEvent("AP_SPD_VAR_SET", kts); }
+
+// AP Toggles
+void SpadNextSerial::apMasterToggle()       { _sendEvent("AP_MASTER"); }
+void SpadNextSerial::flightDirectorToggle() { _sendEvent("TOGGLE_FLIGHT_DIRECTOR"); }
+void SpadNextSerial::apHeadingToggle()      { _sendEvent("AP_HDG_HOLD"); }
+void SpadNextSerial::apNavToggle()          { _sendEvent("AP_NAV1_HOLD"); }
+void SpadNextSerial::apAltHoldToggle()      { _sendEvent("AP_ALT_HOLD"); }
+void SpadNextSerial::apVsHoldToggle()       { _sendEvent("AP_VS_HOLD"); }
+void SpadNextSerial::apApproachToggle()     { _sendEvent("AP_APR_HOLD"); }
