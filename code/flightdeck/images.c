@@ -1,6 +1,6 @@
 #include "images.h"
 
-const ext_img_desc_t images[7] = {
+const ext_img_desc_t images[21] = {
     { "autopilot_tile_48px", &img_autopilot_tile_48px },
     { "engine_fan_48px", &img_engine_fan_48px },
     { "ground_tile_48px", &img_ground_tile_48px },
@@ -8,4 +8,18 @@ const ext_img_desc_t images[7] = {
     { "radios_tile_48px", &img_radios_tile_48px },
     { "sim_pause_48px", &img_sim_pause_48px },
     { "home", &img_home },
+    { "active_pause_grey", &img_active_pause_grey },
+    { "sim_pause_grey", &img_sim_pause_grey },
+    { "sim_rate_up_grey", &img_sim_rate_up_grey },
+    { "sim_rate_down_grey", &img_sim_rate_down_grey },
+    { "sim_rate_reset_grey", &img_sim_rate_reset_grey },
+    { "active_pause_red", &img_active_pause_red },
+    { "sim_pause_red", &img_sim_pause_red },
+    { "sim_pause_amber", &img_sim_pause_amber },
+    { "active_pause_amber", &img_active_pause_amber },
+    { "active_pause_cyan", &img_active_pause_cyan },
+    { "sim_pause_cyan", &img_sim_pause_cyan },
+    { "sim_rate_down_cyan", &img_sim_rate_down_cyan },
+    { "sim_rate_up_cyan", &img_sim_rate_up_cyan },
+    { "sim_rate_reset_cyan", &img_sim_rate_reset_cyan },
 };

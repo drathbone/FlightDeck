@@ -11,6 +11,7 @@ typedef struct _objects_t {
     lv_obj_t *pg_home;
     lv_obj_t *pg_radios;
     lv_obj_t *pg_autopilot;
+    lv_obj_t *pg_sim_controls;
     lv_obj_t *radios;
     lv_obj_t *obj0;
     lv_obj_t *autopilot;
@@ -76,7 +77,35 @@ typedef struct _objects_t {
     lv_obj_t *obj31;
     lv_obj_t *obj32;
     lv_obj_t *ap_controls;
+    lv_obj_t *b_bc;
+    lv_obj_t *obj33;
+    lv_obj_t *b_yd;
+    lv_obj_t *obj34;
+    lv_obj_t *b_lvl;
+    lv_obj_t *obj35;
+    lv_obj_t *b_vnav;
+    lv_obj_t *obj36;
     lv_obj_t *home_1;
+    lv_obj_t *pause;
+    lv_obj_t *active_pause;
+    lv_obj_t *obj37;
+    lv_obj_t *obj38;
+    lv_obj_t *none;
+    lv_obj_t *none_1;
+    lv_obj_t *none_2;
+    lv_obj_t *none_3;
+    lv_obj_t *none_4;
+    lv_obj_t *none_5;
+    lv_obj_t *none_6;
+    lv_obj_t *sim_rate;
+    lv_obj_t *obj39;
+    lv_obj_t *l_simrate;
+    lv_obj_t *b_sim_rate_inc;
+    lv_obj_t *b_sim_rate_dec;
+    lv_obj_t *b_sim_rate_reset;
+    lv_obj_t *none_7;
+    lv_obj_t *none_8;
+    lv_obj_t *home_2;
 } objects_t;
 
 extern objects_t objects;
@@ -85,6 +114,7 @@ enum ScreensEnum {
     SCREEN_ID_PG_HOME = 1,
     SCREEN_ID_PG_RADIOS = 2,
     SCREEN_ID_PG_AUTOPILOT = 3,
+    SCREEN_ID_PG_SIM_CONTROLS = 4,
 };
 
 void create_screen_pg_home();
@@ -95,6 +125,9 @@ void tick_screen_pg_radios();
 
 void create_screen_pg_autopilot();
 void tick_screen_pg_autopilot();
+
+void create_screen_pg_sim_controls();
+void tick_screen_pg_sim_controls();
 
 void tick_screen_by_id(enum ScreensEnum screenId);
 void tick_screen(int screen_index);

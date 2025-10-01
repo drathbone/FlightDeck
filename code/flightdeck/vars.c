@@ -194,3 +194,17 @@ void set_var_v_apias(const char *value){
   v_apias[sizeof(v_apias) - 1] = '\0';
 }
 
+static char v_simrate[16] = "x1";
+const char *get_var_v_simrate(){
+  return v_simrate;
+}
+
+void set_var_v_simrate(const char *value) {
+  if (!value) {
+    v_simrate[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_simrate, value, sizeof(v_simrate) - 1);
+  v_simrate[sizeof(v_simrate) - 1] = '\0';
+}

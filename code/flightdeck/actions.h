@@ -14,6 +14,22 @@ extern void action_e_ground(lv_event_t * e);
 extern void action_e_engine(lv_event_t * e);
 extern void action_e_lighting(lv_event_t * e);
 extern void action_e_home(lv_event_t * e);
+extern void action_ap_pressed(lv_event_t * e);
+extern void action_fd_pressed(lv_event_t * e);
+extern void action_hdg_pressed(lv_event_t * e);
+extern void action_nav_pressed(lv_event_t * e);
+extern void action_alt_pressed(lv_event_t * e);
+extern void action_vs_pressed(lv_event_t * e);
+extern void action_apr_pressed(lv_event_t * e);
+extern void action_bc_pressed(lv_event_t * e);
+extern void action_yd_pressed(lv_event_t * e);
+extern void action_lvl_pressed(lv_event_t * e);
+extern void action_vnav_pressed(lv_event_t * e);
+extern void action_btn_sim_rate_inc(lv_event_t * e);
+extern void action_btn_sim_rate_dec(lv_event_t * e);
+extern void action_btn_sim_rate_rst(lv_event_t * e);
+extern void action_e_pause_pressed(lv_event_t * e);
+extern void action_e_active_pause_pressed(lv_event_t * e);
 
 
 #ifdef __cplusplus

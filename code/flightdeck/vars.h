@@ -26,7 +26,8 @@ enum FlowGlobalVariables {
     FLOW_GLOBAL_VARIABLE_V_APHDG = 8,
     FLOW_GLOBAL_VARIABLE_V_APALT = 9,
     FLOW_GLOBAL_VARIABLE_V_APVS = 10,
-    FLOW_GLOBAL_VARIABLE_V_APIAS = 11
+    FLOW_GLOBAL_VARIABLE_V_APIAS = 11,
+    FLOW_GLOBAL_VARIABLE_V_SIMRATE = 12
 };
 
 // Native global variables
@@ -55,6 +56,8 @@ extern const char *get_var_v_apvs();
 extern void set_var_v_apvs(const char *value);
 extern const char *get_var_v_apias();
 extern void set_var_v_apias(const char *value);
+extern const char *get_var_v_simrate();
+extern void set_var_v_simrate(const char *value);
 
 
 #ifdef __cplusplus

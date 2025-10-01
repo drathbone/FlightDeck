@@ -36,6 +36,14 @@ void SpadNextSerial::poll() {
   }
 }
 
+// -- Function to stop sending repeated events
+bool SpadNextSerial::_allowSend(uint32_t intervalMs) {
+  uint32_t now = millis();
+  if (now - _lastSendMs < intervalMs) return false;
+  _lastSendMs = now;
+  return true;
+}
+
 // ---------------- change callback ----------------
 void SpadNextSerial::onValueChanged(ChangeHandler cb) { _onChange = cb; }
 
@@ -109,8 +117,6 @@ void SpadNextSerial::_processMessage(char* msg) {
       case DID_NAV1_STB: _emitIfChanged(DID_NAV1_STB, _nav1StandbyMHz, val); break;
       case DID_NAV2_ACT: _emitIfChanged(DID_NAV2_ACT, _nav2ActiveMHz,  val); break;
       case DID_NAV2_STB: _emitIfChanged(DID_NAV2_STB, _nav2StandbyMHz, val); break;
-      case DID_SIM_RATE: _emitIfChanged(DID_SIM_RATE, _simRate,        val, 0.01f); break; // coarser tolerance for rate
-      case DID_ACTIVE_PAUSE: _emitIfChanged(DID_ACTIVE_PAUSE, *(float*)&_activePause, val, 0.5f); break;
       case DID_AP_HDG:       _emitIfChanged(DID_AP_HDG, _apHdgDeg,  val, 0.1f); break;
       case DID_AP_ALT:       _emitIfChanged(DID_AP_ALT, _apAltFt,   val, 1.0f); break;
       case DID_AP_VS:        _emitIfChanged(DID_AP_VS,  _apVSFPM,   val, 10.0f); break;
@@ -125,6 +131,21 @@ void SpadNextSerial::_processMessage(char* msg) {
       case DID_AP_VS_MODE:      _emitIfChanged(DID_AP_VS_MODE,      _apVsMode,  val, 0.5f); break;
       case DID_APR_ACTIVE:      _emitIfChanged(DID_APR_ACTIVE,      _aprActive, val, 0.5f); break;
       case DID_APR_ARMED:       _emitIfChanged(DID_APR_ARMED,       _aprArmed,  val, 0.5f); break;
+      case DID_AP_BC_MODE:   _emitIfChanged(DID_AP_BC_MODE,   _apBC,   val, 0.5f); break;
+      case DID_AP_YD_MODE:   _emitIfChanged(DID_AP_YD_MODE,   _apYD,   val, 0.5f); break;
+      case DID_AP_LVL_MODE:  _emitIfChanged(DID_AP_LVL_MODE,  _apLVL,  val, 0.5f); break;
+      // case DID_AP_VNAV_MODE: _emitIfChanged(DID_AP_VNAV_MODE, _apVNAV, val, 0.5f); break; // optional
+      case DID_AP_VNAV_ACTIVE: _emitIfChanged(DID_AP_VNAV_ACTIVE, _apVnavActive, val, 0.5f); break;
+      case DID_AP_VNAV_ARMED:  _emitIfChanged(DID_AP_VNAV_ARMED,  _apVnavArmed,  val, 0.5f); break;
+      case DID_AP_VNAV_MODE:
+        _emitIfChanged(DID_AP_VNAV_MODE, _apVNAV, val, 0.5f);  // treat >=0.5 as ON
+        break;
+      case DID_SIM_RATE:     _emitIfChanged(DID_SIM_RATE,     _simRate,     val, 0.0f); break;
+      case DID_ACTIVE_PAUSE: _emitIfChanged(DID_ACTIVE_PAUSE, _activePause, val, 0.5f); break;
+      case DID_SLEW_ACTIVE:  _emitIfChanged(DID_SLEW_ACTIVE,  _slewActive,  val, 0.5f); break;
+      case DID_FULL_PAUSE:   _emitIfChanged(DID_FULL_PAUSE,   _fullPause,   val, 0.5f); break;
+
+
 
       default: break;
     }
@@ -160,11 +181,6 @@ void SpadNextSerial::_doSubscriptions() {
   _subscribe(DID_NAV2_ACT, "SIMCONNECT:NAV ACTIVE FREQUENCY:2", "MHz");
   _subscribe(DID_NAV2_STB, "SIMCONNECT:NAV STANDBY FREQUENCY:2", "MHz");
 
-  _subscribe(DID_SIM_RATE, "SIMCONNECT:SIMULATION RATE");
-
-  // Active Pause state (boolean-like)
-  _subscribe(DID_ACTIVE_PAUSE, "SIMCONNECT:ACTIVE PAUSE");
-
   // Autopilot selected/target values
   _subscribe(DID_AP_HDG, "SIMCONNECT:AUTOPILOT HEADING LOCK DIR", "Degrees");
   _subscribe(DID_AP_ALT, "SIMCONNECT:AUTOPILOT ALTITUDE LOCK VAR", "Feet");
@@ -182,6 +198,23 @@ void SpadNextSerial::_doSubscriptions() {
   //_subscribe(DID_FD_STATE,        "SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE");
   _subscribe(DID_FD_STATE_1, "SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE:1");
   _subscribe(DID_FD_STATE_2, "SIMCONNECT:AUTOPILOT FLIGHT DIRECTOR ACTIVE:2");
+  // Extra AP mode states
+  _subscribe(DID_AP_BC_MODE,   "SIMCONNECT:AUTOPILOT BACKCOURSE HOLD");
+  _subscribe(DID_AP_YD_MODE,   "SIMCONNECT:AUTOPILOT YAW DAMPER");
+  _subscribe(DID_AP_LVL_MODE,  "SIMCONNECT:AUTOPILOT WING LEVELER");
+
+  // VNAV state is not guaranteed across aircraft; add only if you want to try:
+  // _subscribe(DID_AP_VNAV_MODE, "SIMCONNECT:AUTOPILOT VNAV");   // optional
+  _subscribe(DID_AP_VNAV_ACTIVE, "SIMCONNECT:AP_VNAV_ACTIVE");
+  _subscribe(DID_AP_VNAV_ARMED,  "SIMCONNECT:AP_VNAV_ARMED");
+  _subscribe(DID_AP_VNAV_MODE, "LVAR:XMLVAR_VNAVButtonValue");
+
+  // --- Sim controls ---
+  _subscribe(DID_SIM_RATE,     "SIMCONNECT:SIMULATION RATE");
+  _subscribe(DID_ACTIVE_PAUSE, "SIMCONNECT:IS IN ACTIVE PAUSE");
+  _subscribe(DID_SLEW_ACTIVE,  "SIMCONNECT:IS SLEW ACTIVE");
+  // _subscribe(DID_FULL_PAUSE,   "SIMCONNECT:PAUSED");   // optional (classic pause)
+
 }
 
 // ---------------- send helpers ----------------
@@ -241,6 +274,15 @@ void SpadNextSerial::_sendEvent(const char* name, long value) {
   _sendEnd();
 }
 
+void SpadNextSerial::_sendEventParam(const char* evt, int32_t param) {
+  _sendBegin(4);
+  _io.print("SIMCONNECT:");
+  _io.print(evt);
+  _io.print(",");
+  _io.print(param);
+  _sendEnd();
+}
+
 // ---------------- public control API ----------------
 void SpadNextSerial::swapCOM1() { _sendEvent("COM_STBY_RADIO_SWAP"); }
 void SpadNextSerial::swapCOM2() { _sendEvent("COM2_RADIO_SWAP"); }
@@ -267,14 +309,6 @@ void SpadNextSerial::nav2StandbyDecMHz() { _sendEvent("NAV2_RADIO_WHOLE_DEC"); }
 void SpadNextSerial::nav2StandbyIncKHz() { _sendEvent("NAV2_RADIO_FRACT_INC"); }
 void SpadNextSerial::nav2StandbyDecKHz() { _sendEvent("NAV2_RADIO_FRACT_DEC"); }
 
-void SpadNextSerial::simRateInc()      { _sendEvent("SIM_RATE_INCR"); }
-void SpadNextSerial::simRateDec()      { _sendEvent("SIM_RATE_DECR"); }
-void SpadNextSerial::simRateReset1x()  { _sendEvent("SIM_RATE_SET", 256); }
-
-void SpadNextSerial::activePauseOn()     { _sendEvent("ACTIVE_PAUSE_ON"); }
-void SpadNextSerial::activePauseOff()    { _sendEvent("ACTIVE_PAUSE_OFF"); }
-void SpadNextSerial::activePauseToggle() { _sendEvent("ACTIVE_PAUSE_TOGGLE"); }
-
 // Heading
 void SpadNextSerial::apHeadingInc()         { _sendEvent("HEADING_BUG_INC"); }
 void SpadNextSerial::apHeadingDec()         { _sendEvent("HEADING_BUG_DEC"); }
@@ -296,10 +330,37 @@ void SpadNextSerial::apIASDec()             { _sendEvent("AP_SPD_VAR_DEC"); }
 void SpadNextSerial::apIASSetKnots(long kts){ _sendEvent("AP_SPD_VAR_SET", kts); }
 
 // AP Toggles
-void SpadNextSerial::apMasterToggle()       { _sendEvent("AP_MASTER"); }
-void SpadNextSerial::flightDirectorToggle() { _sendEvent("TOGGLE_FLIGHT_DIRECTOR"); }
-void SpadNextSerial::apHeadingToggle()      { _sendEvent("AP_HDG_HOLD"); }
-void SpadNextSerial::apNavToggle()          { _sendEvent("AP_NAV1_HOLD"); }
-void SpadNextSerial::apAltHoldToggle()      { _sendEvent("AP_ALT_HOLD"); }
-void SpadNextSerial::apVsHoldToggle()       { _sendEvent("AP_VS_HOLD"); }
-void SpadNextSerial::apApproachToggle()     { _sendEvent("AP_APR_HOLD"); }
+void SpadNextSerial::apMasterToggle()       { if (!_allowSend(200)) return; _sendEvent("AP_MASTER"); }
+void SpadNextSerial::flightDirectorToggle() { if (!_allowSend(200)) return; _sendEvent("TOGGLE_FLIGHT_DIRECTOR"); }
+void SpadNextSerial::apHeadingToggle()      { if (!_allowSend(200)) return; _sendEvent("AP_HDG_HOLD"); }
+void SpadNextSerial::apNavToggle()          { if (!_allowSend(200)) return; _sendEvent("AP_NAV1_HOLD"); }
+void SpadNextSerial::apAltHoldToggle()      { if (!_allowSend(200)) return; _sendEvent("AP_ALT_HOLD"); }
+void SpadNextSerial::apVsHoldToggle()       { if (!_allowSend(200)) return; _sendEvent("AP_VS_HOLD"); }
+void SpadNextSerial::apApproachToggle()     { if (!_allowSend(200)) return; _sendEvent("AP_APR_HOLD"); }
+void SpadNextSerial::apBackcourseToggle()  { if (!_allowSend(200)) return; _sendEvent("AP_BC_HOLD"); }
+void SpadNextSerial::yawDamperToggle()     { if (!_allowSend(200)) return; _sendEvent("YAW_DAMPER_TOGGLE"); }
+void SpadNextSerial::apWingLevelerToggle() { if (!_allowSend(200)) return; _sendEvent("AP_WING_LEVELER"); }
+void SpadNextSerial::vnavToggle()          { if (!_allowSend(200)) return; _sendEvent("VNV_BUTTON"); }
+
+// --- Sim Rate ---
+void SpadNextSerial::simRateInc()   { if (!_allowSend(200)) return; _sendEvent("SIM_RATE_INCR"); }
+void SpadNextSerial::simRateDec()   { if (!_allowSend(200)) return; _sendEvent("SIM_RATE_DECR"); }
+void SpadNextSerial::simRateSet1x() { if (!_allowSend(200)) return; _sendEventParam("SIM_RATE_SET", 256); } // 256 = 1×
+
+// --- Active Pause ---
+void SpadNextSerial::activePauseToggle() { if (!_allowSend(200)) return; _sendEvent("ACTIVE_PAUSE_TOGGLE"); }
+void SpadNextSerial::activePauseOn()     { if (!_allowSend(200)) return; _sendEvent("ACTIVE_PAUSE_ON"); }
+void SpadNextSerial::activePauseOff()    { if (!_allowSend(200)) return; _sendEvent("ACTIVE_PAUSE_OFF"); }
+
+// --- Full Pause (classic) ---
+void SpadNextSerial::pauseToggle() { if (!_allowSend(200)) return; _sendEvent("PAUSE_TOGGLE"); }
+void SpadNextSerial::pauseOn()     { if (!_allowSend(200)) return; _sendEvent("PAUSE_ON"); }
+void SpadNextSerial::pauseOff()    { if (!_allowSend(200)) return; _sendEvent("PAUSE_OFF"); }
+
+// --- Slew ---
+void SpadNextSerial::slewToggle() { if (!_allowSend(200)) return; _sendEvent("SLEW_TOGGLE"); }
+// If you prefer explicit on/off, SPAD accepts SLEW_SET with 1/0:
+void SpadNextSerial::slewOn()     { if (!_allowSend(200)) return; _sendEventParam("SLEW_SET", 1); }
+void SpadNextSerial::slewOff()    { if (!_allowSend(200)) return; _sendEventParam("SLEW_SET", 0); }
+
+

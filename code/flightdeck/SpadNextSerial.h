@@ -11,6 +11,7 @@ public:
     DID_NAV1_ACT = 105, DID_NAV1_STB = 106,
     DID_NAV2_ACT = 107, DID_NAV2_STB = 108,
     DID_SIM_RATE = 109, DID_ACTIVE_PAUSE = 110,
+    DID_SLEW_ACTIVE = 111,  DID_FULL_PAUSE  = 112,
     DID_AP_HDG = 201,   DID_AP_ALT = 202,
     DID_AP_VS  = 203,   DID_AP_IAS = 204,
     DID_AP_MASTER_STATE = 205,
@@ -23,6 +24,13 @@ public:
     DID_APR_ARMED       = 212,
     DID_FD_STATE_1      = 213,
     DID_FD_STATE_2      = 214,
+    DID_AP_BC_MODE      = 215,  // back course (bool)
+    DID_AP_YD_MODE      = 216,  // yaw damper (bool)
+    DID_AP_LVL_MODE     = 217,  // wing leveler (bool)
+    DID_AP_VNAV_MODE    = 218,   // VNAV (optional; may not exist on all aircraft)
+    DID_AP_VNAV_ACTIVE = 219,
+    DID_AP_VNAV_ARMED  = 220,
+
   };
 
   using ChangeHandler = void (*)(DataId id, float value);
@@ -52,8 +60,8 @@ public:
   float nav1StandbyMHz() const { return _nav1StandbyMHz; }
   float nav2ActiveMHz()  const { return _nav2ActiveMHz; }
   float nav2StandbyMHz() const { return _nav2StandbyMHz; }
-  float simRate()        const { return _simRate; }
-  bool  activePause()     const { return _activePause != 0; }
+//  float simRate()        const { return _simRate; }
+//  bool  activePause()     const { return _activePause != 0; }
   float apHeadingDeg()    const { return _apHdgDeg; }     // degrees
   float apAltitudeFt()    const { return _apAltFt; }      // feet
   float apVSFPM()         const { return _apVSFPM; }      // ft/min
@@ -74,11 +82,6 @@ public:
   void nav2StandbyIncMHz(); void nav2StandbyDecMHz();
   void nav2StandbyIncKHz(); void nav2StandbyDecKHz();
 
-  // ---- Simulation rate + Active Pause ----
-  void simRateInc(); void simRateDec();
-  void simRateReset1x();               // SIM_RATE_SET 256
-
-  void activePauseOn(); void activePauseOff(); void activePauseToggle();
 
   // Autopilot controls
   void apHeadingInc();            void apHeadingDec();
@@ -97,6 +100,31 @@ public:
   void apAltHoldToggle();
   void apVsHoldToggle();
   void apApproachToggle();
+  void apBackcourseToggle();     // BC
+  void yawDamperToggle();        // YD
+  void apWingLevelerToggle();    // LVL
+  void vnavToggle();             // VNAV (stock support varies)
+
+  // Sim Rate
+  void simRateInc();
+  void simRateDec();
+  void simRateSet1x();   // hard reset to 1×
+
+  // Active Pause
+  void activePauseToggle();
+  void activePauseOn();
+  void activePauseOff();
+
+  // Full Pause (optional, classic pause)
+  void pauseToggle();
+  void pauseOn();
+  void pauseOff();
+
+  // Slew
+  void slewToggle();
+  void slewOn();
+  void slewOff();
+
 
   // ---- (Optional) Set your own fixed GUID and firmware version ----
   // If not set, defaults (constant GUID + "1.0") are used.
@@ -106,9 +134,11 @@ public:
 private:
   // --- internals ---
   void _processMessage(char* msg);
+  
+  uint32_t _lastSendMs = 0;   // shared timestamp
+  bool _allowSend(uint32_t intervalMs);
 
   bool _didSubscribe = false;
-  int   _activePause    = 0;
   float _apHdgDeg       = NAN;
   float _apAltFt        = NAN;
   float _apVSFPM        = NAN;
@@ -116,6 +146,12 @@ private:
   float _apMaster = NAN, _fdState = NAN;
   float _apHdgMode = NAN, _apNavMode = NAN, _apAltMode = NAN, _apVsMode = NAN;
   float _aprActive = NAN, _aprArmed = NAN;
+  float _apBC = NAN, _apYD = NAN, _apLVL = NAN, _apVNAV = NAN;
+  float _apVnavActive = NAN, _apVnavArmed = NAN;
+  float _simRate = NAN;
+  float _activePause = NAN;
+  float _slewActive = NAN;
+  float _fullPause = NAN;   // optional
 
   // Handshake reply: 0,SPAD,<Guid>,<Name>,<SerialVersion>,<DeviceVersion>[,options...];
   void _sendInitReply();
@@ -133,6 +169,7 @@ private:
   void _subscribe(uint16_t index, const char* path, const char* unit = nullptr);
   void _sendEvent(const char* name);
   void _sendEvent(const char* name, long value);
+  void _sendEventParam(const char* evt, int32_t param);  
 
   // wire helpers
   void _sendBegin(uint8_t channel);
@@ -164,7 +201,6 @@ private:
   float _com2ActiveMHz  = NAN, _com2StandbyMHz = NAN;
   float _nav1ActiveMHz  = NAN, _nav1StandbyMHz = NAN;
   float _nav2ActiveMHz  = NAN, _nav2StandbyMHz = NAN;
-  float _simRate        = NAN;
 
   float _fd1 = NAN, _fd2 = NAN;
 

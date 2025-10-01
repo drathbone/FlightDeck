@@ -37,16 +37,22 @@ void RotaryBottom_TurnRight();
 void RotaryBottom_ButtonPressed();
 
 // This block is a helper to change label/text colours depending on off/standby/active status
-#define COL_OFF  lv_color_hex(0xE5E7EB)  // grey
-#define COL_ARM  lv_color_hex(0xF59E0B)  // amber
-#define COL_ACT  lv_color_hex(0x22D3EE)  // cyan
+#define COL_DISABLED lv_color_hex(0x94A3B8)  // grey - not available
+#define COL_OFF      lv_color_hex(0x22D3EE)  // cyan - available/off
+#define COL_ARM      lv_color_hex(0xEF4444)  // red - armed
+#define COL_ACT      lv_color_hex(0xF59E0B)  // amber - active/on
 
-typedef enum { MODE_OFF = 0, MODE_ARMED = 1, MODE_ACTIVE = 2 } mode_state_t;
+typedef enum { 
+    MODE_DISABLED = 0, 
+    MODE_OFF = 1, 
+    MODE_ARMED = 2, 
+    MODE_ACTIVE = 3 
+} mode_state_t;
 
 static inline void set_ap_button(lv_obj_t* container, lv_obj_t* label, mode_state_t state) {
-    lv_color_t c = (state == MODE_ACTIVE) ? COL_ACT :
-                   (state == MODE_ARMED)  ? COL_ARM : COL_OFF;
-
+    lv_color_t c = (state == MODE_ACTIVE)   ? COL_ACT :
+                   (state == MODE_ARMED)    ? COL_ARM :
+                   (state == MODE_OFF)      ? COL_OFF : COL_DISABLED;
     lv_obj_set_style_outline_color(container, c, LV_PART_MAIN);
     lv_obj_set_style_text_color(label, c, LV_PART_MAIN);
 }
@@ -448,6 +454,13 @@ void RotaryBottom_ButtonPressed() {
   // Your logic here
 }
 
+// little formmater the the SimRate to x1/x2/x4 etc
+static void formatSimRate(float simRateRaw, char* out, size_t outsz) {
+  int mult = (int)roundf(simRateRaw / 256.0f);
+  if (mult < 1) mult = 1;
+  snprintf(out, outsz, "x%d", mult);
+}
+
 // spad.next functions
 void onSpadChange(SpadNextSerial::DataId id, float v) {
   static float fdA = NAN;  // AUTOPILOT FLIGHT DIRECTOR ACTIVE
@@ -455,6 +468,8 @@ void onSpadChange(SpadNextSerial::DataId id, float v) {
   static bool fd1 = false, fd2 = false;     // only needed if you subscribed to FD :1 and :2
   static bool aprArmed = false;             // needs DID_APR_ARMED subscription
   static bool aprActive = false;            // needs DID_APR_ACTIVE subscription
+  static bool vnavArmed=false, vnavActive=false;
+
   switch (id) {
     case SpadNextSerial::DID_COM1_ACT: {
       static char com1ActStr[16];
@@ -574,6 +589,55 @@ void onSpadChange(SpadNextSerial::DataId id, float v) {
       aprActive = (v >= 0.5f);
       set_ap_button(objects.b_apr, objects.obj24,
                     aprActive ? MODE_ACTIVE : (aprArmed ? MODE_ARMED : MODE_OFF));
+      break;
+
+    case SpadNextSerial::DID_AP_BC_MODE:
+      set_ap_button(objects.b_bc,  objects.obj33,  (v>=0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+
+    case SpadNextSerial::DID_AP_YD_MODE:
+      set_ap_button(objects.b_yd,  objects.obj34,  (v>=0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+
+    case SpadNextSerial::DID_AP_LVL_MODE:
+      set_ap_button(objects.b_lvl, objects.obj35, (v>=0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+
+    case SpadNextSerial::DID_AP_VNAV_MODE:
+      set_ap_button(objects.b_vnav, objects.obj36, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+
+    case SpadNextSerial::DID_AP_VNAV_ARMED:
+      vnavArmed = (v >= 0.5f);
+      set_ap_button(objects.b_vnav, objects.obj36,
+                    vnavActive ? MODE_ACTIVE : (vnavArmed ? MODE_ARMED : MODE_OFF));
+      break;
+
+    case SpadNextSerial::DID_AP_VNAV_ACTIVE:
+      vnavActive = (v >= 0.5f);
+      set_ap_button(objects.b_vnav, objects.obj36,
+                    vnavActive ? MODE_ACTIVE : (vnavArmed ? MODE_ARMED : MODE_OFF));
+      break;
+
+    case SpadNextSerial::DID_SIM_RATE: 
+      char s[8];
+      formatSimRate(v, s, sizeof(s));
+      set_var_v_simrate(s);   // your label setter for rate text (e.g., “x1”, “x2”)
+      // Optional: highlight rate pill when > x1
+      set_ap_button(objects.sim_rate, objects.l_simrate, (v > 256.0f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    
+    case SpadNextSerial::DID_ACTIVE_PAUSE:
+      set_ap_button(objects.active_pause, objects.obj38, (v>=0.5f)?MODE_ACTIVE:MODE_OFF);
+      break;
+
+    //case SpadNextSerial::DID_SLEW_ACTIVE:
+    //  set_ap_button(objects.b_slew, objects.l_slew, (v>=0.5f)?MODE_ACTIVE:MODE_OFF);
+    //  break;
+
+    // Optional full pause indicator if you want it separate from active pause:
+    case SpadNextSerial::DID_FULL_PAUSE:
+      set_ap_button(objects.pause, objects.pause, (v>=0.5f)?MODE_ACTIVE:MODE_OFF);
       break;
 
     default: break;
