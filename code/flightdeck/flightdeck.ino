@@ -452,11 +452,11 @@ void RotaryBottom_ButtonPressed() {
 }
 
 // little formmater the the SimRate to x1/x2/x4 etc
-static void formatSimRate(float simRateRaw, char* out, size_t outsz) {
-  int mult = (int)roundf(simRateRaw / 256.0f);
-  if (mult < 1) mult = 1;
-  snprintf(out, outsz, "x%d", mult);
-}
+//static void formatSimRate(float simRateRaw, char* out, size_t outsz) {
+//  int mult = (int)roundf(simRateRaw / 256.0f);
+//  if (mult < 1) mult = 1;
+//  snprintf(out, outsz, "x%d", mult);
+//}
 
 // spad.next functions
 void onSpadChange(SpadNextSerial::DataId id, float v) {
@@ -616,13 +616,15 @@ void onSpadChange(SpadNextSerial::DataId id, float v) {
                     vnavActive ? MODE_ACTIVE : (vnavArmed ? MODE_ARMED : MODE_OFF));
       break;
 
-    case SpadNextSerial::DID_SIM_RATE: 
-      char s[8];
-      formatSimRate(v, s, sizeof(s));
-      set_var_v_simrate(s);   // your label setter for rate text (e.g., “x1”, “x2”)
-      // Optional: highlight rate pill when > x1
-      set_ap_button(objects.sim_rate, objects.l_simrate, (v > 256.0f) ? MODE_ACTIVE : MODE_OFF);
-      break;
+    case SpadNextSerial::DID_SIM_RATE: {
+        char s[8];
+        snprintf(s, sizeof(s), "x%d", (int)roundf(v));
+        set_var_v_simrate(s);
+
+        // Highlight when faster than real-time
+        set_ap_button(objects.sim_rate, objects.l_simrate, (v > 1.0f) ? MODE_ACTIVE : MODE_OFF);
+        break;
+    }
     
     case SpadNextSerial::DID_ACTIVE_PAUSE:
       set_ap_button(objects.active_pause, objects.obj38, (v>=0.5f)?MODE_ACTIVE:MODE_OFF);

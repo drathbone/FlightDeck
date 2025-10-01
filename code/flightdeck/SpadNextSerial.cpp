@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "debug.h"
 
 // ---------------- ctor / begin ----------------
 SpadNextSerial::SpadNextSerial(Stream& io, uint32_t baud)
@@ -146,10 +147,30 @@ void SpadNextSerial::_processMessage(char* msg) {
       case DID_FULL_PAUSE:   _emitIfChanged(DID_FULL_PAUSE,   _fullPause,   val, 0.5f); break;
       // Lights
       case DID_LIGHT_LANDING: _emitIfChanged(DID_LIGHT_LANDING, _lightLanding, val, 0.5f); break;
-      case DID_LIGHT_TAXI:    _emitIfChanged(DID_LIGHT_TAXI,    _lightTaxi,    val, 0.5f); break;
-      case DID_LIGHT_NAV:     _emitIfChanged(DID_LIGHT_NAV,     _lightNav,     val, 0.5f); break;
-      case DID_LIGHT_STROBE:  _emitIfChanged(DID_LIGHT_STROBE,  _lightStrobe,  val, 0.5f); break;
-      case DID_LIGHT_BEACON:  _emitIfChanged(DID_LIGHT_BEACON,  _lightBeacon,  val, 0.5f); break;
+      //case DID_LIGHT_TAXI:    _emitIfChanged(DID_LIGHT_TAXI,    _lightTaxi,    val, 0.5f); break;
+      case DID_LIGHT_TAXI: {
+          _emitIfChanged(DID_LIGHT_TAXI, _lightTaxi, val, 0.5f);
+          _taxiState = (val > 0.5f) ? 1 : 0;
+          break;
+      }
+      //case DID_LIGHT_NAV:     _emitIfChanged(DID_LIGHT_NAV,     _lightNav,     val, 0.5f); break;
+              case DID_LIGHT_NAV: {
+            _emitIfChanged(DID_LIGHT_NAV, _lightNav, val, 0.5f);
+            _navState = (val > 0.5f) ? 1 : 0;
+            break;
+        }
+      //case DID_LIGHT_STROBE:  _emitIfChanged(DID_LIGHT_STROBE,  _lightStrobe,  val, 0.5f); break;
+      case DID_LIGHT_STROBE: {
+          _emitIfChanged(DID_LIGHT_STROBE, _lightStrobe, val, 0.5f);
+          _strobeState = (val > 0.5f) ? 1 : 0;
+          break;
+      }
+      //case DID_LIGHT_BEACON:  _emitIfChanged(DID_LIGHT_BEACON,  _lightBeacon,  val, 0.5f); break;
+      case DID_LIGHT_BEACON: {
+          _emitIfChanged(DID_LIGHT_BEACON, _lightBeacon, val, 0.5f);
+          _beaconState = (val > 0.5f) ? 1 : 0;
+          break;
+      }
       case DID_LIGHT_PANEL:   _emitIfChanged(DID_LIGHT_PANEL,   _lightPanel,   val, 0.5f); break;
       case DID_LIGHT_RECOG:   _emitIfChanged(DID_LIGHT_RECOG,   _lightRecog,   val, 0.5f); break;
       case DID_LIGHT_WING:    _emitIfChanged(DID_LIGHT_WING,    _lightWing,    val, 0.5f); break;
@@ -353,45 +374,149 @@ void SpadNextSerial::apIASDec()             { _sendEvent("AP_SPD_VAR_DEC"); }
 void SpadNextSerial::apIASSetKnots(long kts){ _sendEvent("AP_SPD_VAR_SET", kts); }
 
 // AP Toggles
-void SpadNextSerial::apMasterToggle()       { if (!_allowSend(200)) return; _sendEvent("AP_MASTER"); }
-void SpadNextSerial::flightDirectorToggle() { if (!_allowSend(200)) return; _sendEvent("TOGGLE_FLIGHT_DIRECTOR"); }
-void SpadNextSerial::apHeadingToggle()      { if (!_allowSend(200)) return; _sendEvent("AP_HDG_HOLD"); }
-void SpadNextSerial::apNavToggle()          { if (!_allowSend(200)) return; _sendEvent("AP_NAV1_HOLD"); }
-void SpadNextSerial::apAltHoldToggle()      { if (!_allowSend(200)) return; _sendEvent("AP_ALT_HOLD"); }
-void SpadNextSerial::apVsHoldToggle()       { if (!_allowSend(200)) return; _sendEvent("AP_VS_HOLD"); }
-void SpadNextSerial::apApproachToggle()     { if (!_allowSend(200)) return; _sendEvent("AP_APR_HOLD"); }
-void SpadNextSerial::apBackcourseToggle()  { if (!_allowSend(200)) return; _sendEvent("AP_BC_HOLD"); }
-void SpadNextSerial::yawDamperToggle()     { if (!_allowSend(200)) return; _sendEvent("YAW_DAMPER_TOGGLE"); }
-void SpadNextSerial::apWingLevelerToggle() { if (!_allowSend(200)) return; _sendEvent("AP_WING_LEVELER"); }
-void SpadNextSerial::vnavToggle()          { if (!_allowSend(200)) return; _sendEvent("VNV_BUTTON"); }
+void SpadNextSerial::apMasterToggle()       {_sendEvent("AP_MASTER"); }
+void SpadNextSerial::flightDirectorToggle() { _sendEvent("TOGGLE_FLIGHT_DIRECTOR"); }
+void SpadNextSerial::apHeadingToggle()      { _sendEvent("AP_HDG_HOLD"); }
+void SpadNextSerial::apNavToggle()          { _sendEvent("AP_NAV1_HOLD"); }
+void SpadNextSerial::apAltHoldToggle()      { _sendEvent("AP_ALT_HOLD"); }
+void SpadNextSerial::apVsHoldToggle()       { _sendEvent("AP_VS_HOLD"); }
+void SpadNextSerial::apApproachToggle()     { _sendEvent("AP_APR_HOLD"); }
+void SpadNextSerial::apBackcourseToggle()  { _sendEvent("AP_BC_HOLD"); }
+void SpadNextSerial::yawDamperToggle()     { _sendEvent("YAW_DAMPER_TOGGLE"); }
+void SpadNextSerial::apWingLevelerToggle() { _sendEvent("AP_WING_LEVELER"); }
+void SpadNextSerial::vnavToggle()          { _sendEvent("VNV_BUTTON"); }
 
 // --- Sim Rate ---
-void SpadNextSerial::simRateInc()   { if (!_allowSend(200)) return; _sendEvent("SIM_RATE_INCR"); }
-void SpadNextSerial::simRateDec()   { if (!_allowSend(200)) return; _sendEvent("SIM_RATE_DECR"); }
-void SpadNextSerial::simRateSet1x() { if (!_allowSend(200)) return; _sendEventParam("SIM_RATE_SET", 256); } // 256 = 1×
+void SpadNextSerial::simRateInc()   { _sendEvent("SIM_RATE_INCR"); }
+void SpadNextSerial::simRateDec()   { _sendEvent("SIM_RATE_DECR"); }
+
+
+void SpadNextSerial::simRateSet1x() {
+    // Table of valid sim rate notches
+    const float notches[] = {0.25f, 0.50f, 1.00f, 2.00f, 4.00f, 8.00f,
+                             16.00f, 32.00f, 64.00f, 128.00f};
+    const int notchCount = sizeof(notches) / sizeof(notches[0]);
+    const int targetIdx  = 2; // index of 1.00f in the table
+
+    // Find nearest notch to current _simRate
+    int curIdx = 0;
+    float bestErr = fabsf(_simRate - notches[0]);
+    for (int i = 1; i < notchCount; ++i) {
+        float err = fabsf(_simRate - notches[i]);
+        if (err < bestErr) {
+            curIdx = i;
+            bestErr = err;
+        }
+    }
+
+    int delta = curIdx - targetIdx;   // +ve means above 1x, -ve means below
+    int steps = abs(delta);
+
+    DBG.print("SimRate reset requested from ");
+    DBG.print(_simRate, 2);
+    DBG.print(" (nearest notch idx ");
+    DBG.print(curIdx);
+    DBG.print(") -> 1.00x (idx ");
+    DBG.print(targetIdx);
+    DBG.print("), steps needed: ");
+    DBG.println(steps);
+
+    if (steps == 0) {
+        DBG.println("Already at 1.00x, nothing to do.");
+        return;
+    }
+
+    // Delay slightly longer than your event throttle (200 ms)
+    const unsigned stepDelayMs = 240;
+
+    if (delta > 0) {
+        // Above 1x → step down
+        for (int i = 0; i < steps; ++i) {
+            _sendEvent("SIM_RATE_DECR");
+            DBG.println("  -> Sent SIM_RATE_DECR");
+            delay(stepDelayMs);
+        }
+    } else {
+        // Below 1x → step up
+        for (int i = 0; i < steps; ++i) {
+            _sendEvent("SIM_RATE_INCR");
+            DBG.println("  -> Sent SIM_RATE_INCR");
+            delay(stepDelayMs);
+        }
+    }
+
+    DBG.println("Sim rate reset sequence complete.");
+}
 
 // --- Active Pause ---
-void SpadNextSerial::activePauseToggle() { if (!_allowSend(200)) return; _sendEvent("ACTIVE_PAUSE_TOGGLE"); }
-void SpadNextSerial::activePauseOn()     { if (!_allowSend(200)) return; _sendEvent("ACTIVE_PAUSE_ON"); }
-void SpadNextSerial::activePauseOff()    { if (!_allowSend(200)) return; _sendEvent("ACTIVE_PAUSE_OFF"); }
+void SpadNextSerial::activePauseToggle() { _sendEvent("ACTIVE_PAUSE_TOGGLE"); }
+void SpadNextSerial::activePauseOn()     { _sendEvent("ACTIVE_PAUSE_ON"); }
+void SpadNextSerial::activePauseOff()    { _sendEvent("ACTIVE_PAUSE_OFF"); }
 
 // --- Full Pause (classic) ---
-void SpadNextSerial::pauseToggle() { if (!_allowSend(200)) return; _sendEvent("PAUSE_TOGGLE"); }
-void SpadNextSerial::pauseOn()     { if (!_allowSend(200)) return; _sendEvent("PAUSE_ON"); }
-void SpadNextSerial::pauseOff()    { if (!_allowSend(200)) return; _sendEvent("PAUSE_OFF"); }
+void SpadNextSerial::pauseToggle() { _sendEvent("PAUSE_TOGGLE"); }
+void SpadNextSerial::pauseOn()     { _sendEvent("PAUSE_ON"); }
+void SpadNextSerial::pauseOff()    { _sendEvent("PAUSE_OFF"); }
 
 // --- Slew ---
-void SpadNextSerial::slewToggle() { if (!_allowSend(200)) return; _sendEvent("SLEW_TOGGLE"); }
+void SpadNextSerial::slewToggle() { _sendEvent("SLEW_TOGGLE"); }
 // If you prefer explicit on/off, SPAD accepts SLEW_SET with 1/0:
-void SpadNextSerial::slewOn()     { if (!_allowSend(200)) return; _sendEventParam("SLEW_SET", 1); }
-void SpadNextSerial::slewOff()    { if (!_allowSend(200)) return; _sendEventParam("SLEW_SET", 0); }
+void SpadNextSerial::slewOn()     { _sendEventParam("SLEW_SET", 1); }
+void SpadNextSerial::slewOff()    { _sendEventParam("SLEW_SET", 0); }
 
 // Lights
-void SpadNextSerial::lightLandingToggle() { if (!_allowSend(200)) return; _sendEvent("LANDING_LIGHTS_TOGGLE"); }
-void SpadNextSerial::lightTaxiToggle()    { if (!_allowSend(200)) return; _sendEvent("TAXI_LIGHTS_TOGGLE"); }
-void SpadNextSerial::lightNavToggle()     { if (!_allowSend(200)) return; _sendEvent("TOGGLE_NAV_LIGHTS"); }     // common name
-void SpadNextSerial::lightStrobeToggle()  { if (!_allowSend(200)) return; _sendEvent("STROBES_TOGGLE"); }
-void SpadNextSerial::lightBeaconToggle()  { if (!_allowSend(200)) return; _sendEvent("BEACON_LIGHTS_TOGGLE"); }
+void SpadNextSerial::lightLandingToggle() { _sendEvent("LANDING_LIGHTS_TOGGLE"); }
+// void SpadNextSerial::lightTaxiToggle()    { if (!_allowSend(200)) return; _sendEvent("TAXI_LIGHTS_TOGGLE"); }
+/* ===== TAXI ===== */
+void SpadNextSerial::lightTaxiSet(bool on) {
+    // if (!_allowSend(200)) return;
+    _sendEventParam("TAXI_LIGHTS_SET", (int32_t)(on ? 1 : 0));
+    // optional alias (some stacks listen to LIGHT_*):
+    _sendEventParam("LIGHT_TAXI_SET",  (int32_t)(on ? 1 : 0));
+}
+void SpadNextSerial::lightTaxiToggle() {
+    //if (!_allowSend(200)) return;
+    if (_taxiState != -1) { lightTaxiSet(!_taxiState); return; }
+    _sendEvent("TOGGLE_TAXI_LIGHTS");     // correct canonical toggle
+    _sendEvent("TAXI_LIGHTS_TOGGLE");     // alt spelling, harmless
+}
+//void SpadNextSerial::lightNavToggle()     { if (!_allowSend(200)) return; _sendEvent("TOGGLE_NAV_LIGHTS"); }     // common name
+/* ===== NAV ===== */
+void SpadNextSerial::lightNavSet(bool on) {
+    //if (!_allowSend(200)) return;
+    _sendEventParam("NAV_LIGHTS_SET", (int32_t)(on ? 1 : 0));
+    _sendEventParam("LIGHT_NAV_SET",  (int32_t)(on ? 1 : 0)); // optional alias
+}
+void SpadNextSerial::lightNavToggle() {
+    if (!_allowSend(200)) return;
+    if (_navState != -1) { lightNavSet(!_navState); return; }
+    _sendEvent("TOGGLE_NAV_LIGHTS");
+}
+//void SpadNextSerial::lightStrobeToggle()  { if (!_allowSend(200)) return; _sendEvent("STROBES_TOGGLE"); }
+/* ===== STROBE ===== */
+void SpadNextSerial::lightStrobeSet(bool on) {
+    //if (!_allowSend(200)) return;
+    _sendEventParam("STROBES_SET",      (int32_t)(on ? 1 : 0));
+    _sendEventParam("LIGHT_STROBE_SET", (int32_t)(on ? 1 : 0)); // optional alias
+}
+void SpadNextSerial::lightStrobeToggle() {
+    if (!_allowSend(200)) return;
+    if (_strobeState != -1) { lightStrobeSet(!_strobeState); return; }
+    _sendEvent("STROBES_TOGGLE");
+}
+//void SpadNextSerial::lightBeaconToggle()  { if (!_allowSend(200)) return; _sendEvent("BEACON_LIGHTS_TOGGLE"); }
+/* ===== BEACON ===== */
+void SpadNextSerial::lightBeaconSet(bool on) {
+    //if (!_allowSend(200)) return;
+    _sendEventParam("BEACON_LIGHTS_SET", (int32_t)(on ? 1 : 0));
+    _sendEventParam("LIGHT_BEACON_SET",  (int32_t)(on ? 1 : 0)); // optional alias
+}
+void SpadNextSerial::lightBeaconToggle() {
+    if (!_allowSend(200)) return;
+    if (_beaconState != -1) { lightBeaconSet(!_beaconState); return; }
+    _sendEvent("TOGGLE_BEACON_LIGHTS");
+    _sendEvent("BEACON_LIGHTS_TOGGLE");
+}
 void SpadNextSerial::lightPanelToggle()   { if (!_allowSend(200)) return; _sendEvent("PANEL_LIGHTS_TOGGLE"); }
 void SpadNextSerial::lightRecogToggle()   { if (!_allowSend(200)) return; _sendEvent("RECOGNITION_LIGHTS_TOGGLE"); }
 void SpadNextSerial::lightWingToggle()    { if (!_allowSend(200)) return; _sendEvent("WING_LIGHTS_TOGGLE"); }

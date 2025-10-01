@@ -6,6 +6,7 @@ extern "C" {
 
 #include "SpadNextSerial.h"
 
+
 // Use the same global instance you defined in your .ino:
 //   SpadNextSerial spad(Serial);
 extern SpadNextSerial spad;

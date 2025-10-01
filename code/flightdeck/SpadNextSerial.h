@@ -137,14 +137,23 @@ public:
   // Lights
   void lightLandingToggle();
   void lightTaxiToggle();
+  void lightTaxiSet(bool on);
   void lightNavToggle();
+  void lightNavSet(bool on);
   void lightStrobeToggle();
+  void lightStrobeSet(bool on);
   void lightBeaconToggle();
+  void lightBeaconSet(bool on);
   void lightPanelToggle();
   void lightRecogToggle();
   void lightWingToggle();
   void lightLogoToggle();
   void lightCabinToggle();
+  // Cached states (update these in your RX handler)
+  int8_t _taxiState   = -1;  // 0 off, 1 on, -1 unknown
+  int8_t _beaconState = -1;
+  int8_t _navState    = -1;  // 0 off, 1 on, -1 unknown
+  int8_t _strobeState = -1;
 
   // ---- (Optional) Set your own fixed GUID and firmware version ----
   // If not set, defaults (constant GUID + "1.0") are used.
