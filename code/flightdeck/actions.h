@@ -30,6 +30,24 @@ extern void action_btn_sim_rate_dec(lv_event_t * e);
 extern void action_btn_sim_rate_rst(lv_event_t * e);
 extern void action_e_pause_pressed(lv_event_t * e);
 extern void action_e_active_pause_pressed(lv_event_t * e);
+extern void action_btn_landing_lights_pressed(lv_event_t * e);
+extern void action_btn_taxi_lights_pressed(lv_event_t * e);
+extern void action_btn_nav_lights_pressed(lv_event_t * e);
+extern void action_btn_strobe_lights_pressed(lv_event_t * e);
+extern void action_btn_beacon_lights_pressed(lv_event_t * e);
+extern void action_btn_panel_lights_pressed(lv_event_t * e);
+extern void action_btn_recog_lights_pressed(lv_event_t * e);
+extern void action_btn_wing_lights_pressed(lv_event_t * e);
+extern void action_btn_logo_lights_pressed(lv_event_t * e);
+extern void action_btn_cabin_lights_pressed(lv_event_t * e);
+extern void action_btn_all_on_lights_pressed(lv_event_t * e);
+extern void action_btn_all_off_lights_pressed(lv_event_t * e);
+extern void action_btn_pushback(lv_event_t * e);
+extern void action_btn_refuel(lv_event_t * e);
+extern void action_btn_gpu(lv_event_t * e);
+extern void action_btn_doors(lv_event_t * e);
+extern void action_btn_deice(lv_event_t * e);
+extern void action_btn_autostart(lv_event_t * e);
 
 
 #ifdef __cplusplus

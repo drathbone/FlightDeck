@@ -17,9 +17,13 @@ void action_e_autopilot(lv_event_t * e) {
 void action_e_sim_controls(lv_event_t * e) {
   loadScreen(SCREEN_ID_PG_SIM_CONTROLS);
 }
-void action_e_ground(lv_event_t * e) {}
+void action_e_ground(lv_event_t * e) {
+  loadScreen(SCREEN_ID_PG_GROUND_SERVICES);
+}
 void action_e_engine(lv_event_t * e) {}
-void action_e_lighting(lv_event_t * e) {}
+void action_e_lighting(lv_event_t * e) {
+  loadScreen(SCREEN_ID_PG_LIGHTS);
+}
 
 // Functions for AP buttons
 void action_ap_pressed (lv_event_t * e) { spad_action_ap_toggle(e); }
@@ -43,3 +47,25 @@ void action_e_active_pause_pressed(lv_event_t * e) { spad_action_activepause_tog
 
 // Slew
 //void action_slew_toggle (lv_event_t * e){ spad_action_slew_toggle(e); }
+
+// Light page buttons
+void action_btn_landing_lights_pressed(lv_event_t * e) {}
+void action_btn_taxi_lights_pressed(lv_event_t * e) {}
+void action_btn_nav_lights_pressed(lv_event_t * e) {}
+void action_btn_strobe_lights_pressed(lv_event_t * e) {}
+void action_btn_beacon_lights_pressed(lv_event_t * e) {}
+void action_btn_panel_lights_pressed(lv_event_t * e) {}
+void action_btn_recog_lights_pressed(lv_event_t * e) {}
+void action_btn_wing_lights_pressed(lv_event_t * e) {}
+void action_btn_logo_lights_pressed(lv_event_t * e) {}
+void action_btn_cabin_lights_pressed(lv_event_t * e) {}
+void action_btn_all_on_lights_pressed(lv_event_t * e) {}
+void action_btn_all_off_lights_pressed(lv_event_t * e) {}
+
+// Sim controls page buttons
+void action_btn_pushback(lv_event_t * e) {}
+void action_btn_refuel(lv_event_t * e) {}
+void action_btn_gpu(lv_event_t * e) {}
+void action_btn_doors(lv_event_t * e) {}
+void action_btn_deice(lv_event_t * e) {}
+void action_btn_autostart(lv_event_t * e) {}

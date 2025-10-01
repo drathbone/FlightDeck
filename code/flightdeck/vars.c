@@ -7,7 +7,6 @@ static char v_com1_active[16] = "123.456";
 const char *get_var_v_com1_active() {
   return v_com1_active;
 }
-
 void set_var_v_com1_active(const char *value){
   if (!value) {
     v_com1_active[0] = '\0';
@@ -23,7 +22,6 @@ static char v_com1_standby[16] = "123.456";
 const char *get_var_v_com1_standby() {
   return v_com1_standby;
 }
-
 void set_var_v_com1_standby(const char *value){
   if (!value) {
     v_com1_standby[0] = '\0';
@@ -39,7 +37,6 @@ static char v_com2_active[16] = "123.456";
 const char *get_var_v_com2_active() {
   return v_com2_active;
 }
-
 void set_var_v_com2_active(const char *value){
   if (!value) {
     v_com2_active[0] = '\0';
@@ -55,7 +52,6 @@ static char v_com2_standby[16] = "123.456";
 const char *get_var_v_com2_standby() {
   return v_com2_standby;
 }
-
 void set_var_v_com2_standby(const char *value){
   if (!value) {
     v_com2_standby[0] = '\0';
@@ -71,7 +67,6 @@ static char v_nav1_active[16] = "123.456";
 const char *get_var_v_nav1_active() {
   return v_nav1_active;
 }
-
 void set_var_v_nav1_active(const char *value){
   if (!value) {
     v_nav1_active[0] = '\0';
@@ -87,7 +82,6 @@ static char v_nav1_standby[16] = "123.456";
 const char *get_var_v_nav1_standby() {
   return v_nav1_standby;
 }
-
 void set_var_v_nav1_standby(const char *value){
   if (!value) {
     v_nav1_standby[0] = '\0';
@@ -103,7 +97,6 @@ static char v_nav2_active[16] = "123.456";
 const char *get_var_v_nav2_active() {
   return v_nav2_active;
 }
-
 void set_var_v_nav2_active(const char *value){
   if (!value) {
     v_nav2_active[0] = '\0';
@@ -119,7 +112,6 @@ static char v_nav2_standby[16] = "123.456";
 const char *get_var_v_nav2_standby() {
   return v_nav2_standby;
 }
-
 void set_var_v_nav2_standby(const char *value){
   if (!value) {
     v_nav2_standby[0] = '\0';
@@ -135,7 +127,6 @@ static char v_aphdg[16] = "120";
 const char *get_var_v_aphdg() {
   return v_aphdg;
 }
-
 void set_var_v_aphdg(const char *value){
   if (!value) {
     v_aphdg[0] = '\0';
@@ -151,7 +142,6 @@ static char v_apalt[16] = "10000";
 const char *get_var_v_apalt() {
   return v_apalt;
 }
-
 void set_var_v_apalt(const char *value){
   if (!value) {
     v_apalt[0] = '\0';
@@ -167,7 +157,6 @@ static char v_apvs[16] = "400";
 const char *get_var_v_apvs() {
   return v_apvs;
 }
-
 void set_var_v_apvs(const char *value){
   if (!value) {
     v_apvs[0] = '\0';
@@ -183,7 +172,6 @@ static char v_apias[16] = "120";
 const char *get_var_v_apias() {
   return v_apias;
 }
-
 void set_var_v_apias(const char *value){
   if (!value) {
     v_apias[0] = '\0';
@@ -198,7 +186,6 @@ static char v_simrate[16] = "x1";
 const char *get_var_v_simrate(){
   return v_simrate;
 }
-
 void set_var_v_simrate(const char *value) {
   if (!value) {
     v_simrate[0] = '\0';
@@ -207,4 +194,103 @@ void set_var_v_simrate(const char *value) {
   // Safe copy & truncate
   strncpy(v_simrate, value, sizeof(v_simrate) - 1);
   v_simrate[sizeof(v_simrate) - 1] = '\0';
+}
+
+
+static char v_ground_speed[16] = "0 kts";
+const char *get_var_v_ground_speed(){
+  return v_ground_speed;
+}
+void set_var_v_ground_speed(const char *value) {
+  if (!value) {
+    v_ground_speed[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_ground_speed, value, sizeof(v_ground_speed) - 1);
+  v_ground_speed[sizeof(v_ground_speed) - 1] = '\0';
+}
+
+static char v_parking_brake[16] = "SET";
+const char *get_var_v_parking_brake(){
+  return v_parking_brake;
+}
+void set_var_v_parking_brake(const char *value) {
+  if (!value) {
+    v_parking_brake[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_parking_brake, value, sizeof(v_parking_brake) - 1);
+  v_parking_brake[sizeof(v_parking_brake) - 1] = '\0';
+}
+
+static char v_fuel_total[16] = "0 lbs";
+const char *get_var_v_fuel_total(){
+  return v_fuel_total;
+}
+void set_var_v_fuel_total(const char *value) {
+  if (!value) {
+    v_fuel_total[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_fuel_total, value, sizeof(v_fuel_total) - 1);
+  v_fuel_total[sizeof(v_fuel_total) - 1] = '\0';
+}
+
+static char v_battery[16] = "24.7V";
+const char *get_var_v_battery(){
+  return v_battery;
+}
+void set_var_v_battery(const char *value) {
+  if (!value) {
+    v_battery[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_battery, value, sizeof(v_battery) - 1);
+  v_battery[sizeof(v_battery) - 1] = '\0';
+}
+
+static char v_weight[16] = "5,200 lbs";
+const char *get_var_v_weight(){
+  return v_weight;
+}
+void set_var_v_weight(const char *value) {
+  if (!value) {
+    v_weight[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_weight, value, sizeof(v_weight) - 1);
+  v_weight[sizeof(v_weight) - 1] = '\0';
+}
+
+static char v_temp[16] = "15°C";
+const char *get_var_v_temp(){
+  return v_temp;
+}
+void set_var_v_temp(const char *value) {
+  if (!value) {
+    v_temp[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_temp, value, sizeof(v_temp) - 1);
+  v_temp[sizeof(v_temp) - 1] = '\0';
+}
+
+static char v_gpu_status[16] = "OFF";
+const char *get_var_v_gpu_status(){
+  return v_gpu_status;
+}
+void set_var_v_gpu_status(const char *value) {
+  if (!value) {
+    v_gpu_status[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_gpu_status, value, sizeof(v_gpu_status) - 1);
+  v_gpu_status[sizeof(v_gpu_status) - 1] = '\0';
 }

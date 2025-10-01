@@ -12,6 +12,8 @@ typedef struct _objects_t {
     lv_obj_t *pg_radios;
     lv_obj_t *pg_autopilot;
     lv_obj_t *pg_sim_controls;
+    lv_obj_t *pg_lights;
+    lv_obj_t *pg_ground_services;
     lv_obj_t *radios;
     lv_obj_t *obj0;
     lv_obj_t *autopilot;
@@ -106,6 +108,65 @@ typedef struct _objects_t {
     lv_obj_t *none_7;
     lv_obj_t *none_8;
     lv_obj_t *home_2;
+    lv_obj_t *btn_landing;
+    lv_obj_t *lbl_landing;
+    lv_obj_t *btn_recog;
+    lv_obj_t *lbl_recog;
+    lv_obj_t *btn_taxi;
+    lv_obj_t *lbl_taxi;
+    lv_obj_t *btn_wing;
+    lv_obj_t *lbl_wing;
+    lv_obj_t *btn_nav;
+    lv_obj_t *lbl_nav;
+    lv_obj_t *btn_logo;
+    lv_obj_t *lbl_logo;
+    lv_obj_t *btn_strobe;
+    lv_obj_t *lbl_strobe;
+    lv_obj_t *btn_cabin;
+    lv_obj_t *lbl_cabin;
+    lv_obj_t *btn_beacon;
+    lv_obj_t *lbl_beacon;
+    lv_obj_t *btn_all_on;
+    lv_obj_t *lbl_all_on;
+    lv_obj_t *btn_panel;
+    lv_obj_t *lbl_panel;
+    lv_obj_t *btn_all_off;
+    lv_obj_t *lbl_all_off;
+    lv_obj_t *home_3;
+    lv_obj_t *con_ground_speed;
+    lv_obj_t *lbl_ground_speed;
+    lv_obj_t *lbl_ground_speed_val;
+    lv_obj_t *con_parking_brake;
+    lv_obj_t *lbl_parking_brake;
+    lv_obj_t *lbl_parking_brake_val;
+    lv_obj_t *con_fuel_total;
+    lv_obj_t *lbl_fuel_total;
+    lv_obj_t *lbl_fuel_total_val;
+    lv_obj_t *btn_pushback;
+    lv_obj_t *lbl_pushback;
+    lv_obj_t *btn_refuel;
+    lv_obj_t *lbl_refuel;
+    lv_obj_t *btn_gpu;
+    lv_obj_t *lbl_gpu;
+    lv_obj_t *btn_doors;
+    lv_obj_t *lbl_doors;
+    lv_obj_t *btn_de_ice;
+    lv_obj_t *lbl_de_ice;
+    lv_obj_t *btn_autostart;
+    lv_obj_t *lbl_autostart;
+    lv_obj_t *con_status_bar;
+    lv_obj_t *lbl_battery;
+    lv_obj_t *lbl_battery_val;
+    lv_obj_t *lvl_div1;
+    lv_obj_t *lbl_weight;
+    lv_obj_t *lbl_weight_val;
+    lv_obj_t *lvl_div2;
+    lv_obj_t *lbl_temp;
+    lv_obj_t *lbl_temp_val;
+    lv_obj_t *lvl_div3;
+    lv_obj_t *lbl_gpu_status;
+    lv_obj_t *lbl_gpu_status_val;
+    lv_obj_t *home_4;
 } objects_t;
 
 extern objects_t objects;
@@ -115,6 +176,8 @@ enum ScreensEnum {
     SCREEN_ID_PG_RADIOS = 2,
     SCREEN_ID_PG_AUTOPILOT = 3,
     SCREEN_ID_PG_SIM_CONTROLS = 4,
+    SCREEN_ID_PG_LIGHTS = 5,
+    SCREEN_ID_PG_GROUND_SERVICES = 6,
 };
 
 void create_screen_pg_home();
@@ -128,6 +191,12 @@ void tick_screen_pg_autopilot();
 
 void create_screen_pg_sim_controls();
 void tick_screen_pg_sim_controls();
+
+void create_screen_pg_lights();
+void tick_screen_pg_lights();
+
+void create_screen_pg_ground_services();
+void tick_screen_pg_ground_services();
 
 void tick_screen_by_id(enum ScreensEnum screenId);
 void tick_screen(int screen_index);
