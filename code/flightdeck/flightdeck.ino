@@ -13,6 +13,7 @@
 #include "SpadNextSerial.h"
 #include "debug.h"
 #include "ui_helpers.h"
+#include "ui_post_init.h"
 
 SpadNextSerial spad(Serial);
 
@@ -43,11 +44,11 @@ void RotaryBottom_ButtonPressed();
 #define COL_ARM      lv_color_hex(0xEF4444)  // red - armed
 #define COL_ACT      lv_color_hex(0xF59E0B)  // amber - active/on
 
-inline void set_ap_button(lv_obj_t* container, lv_obj_t* label, mode_state_t state) {
+void set_ap_button(lv_obj_t* container, lv_obj_t* label, mode_state_t state) {
     lv_color_t c = (state == MODE_ACTIVE)   ? COL_ACT :
                    (state == MODE_ARMED)    ? COL_ARM :
                    (state == MODE_OFF)      ? COL_OFF : COL_DISABLED;
-    lv_obj_set_style_outline_color(container, c, LV_PART_MAIN);
+    lv_obj_set_style_border_color(container, c, LV_PART_MAIN);
     lv_obj_set_style_text_color(label, c, LV_PART_MAIN);
 }
 // ---END---
@@ -262,6 +263,8 @@ void setup()
 
   Focus_Init();
  
+  // Call my ui_post_init function
+  ui_post_init();
 }
 
 void loop()

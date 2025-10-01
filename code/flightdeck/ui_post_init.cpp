@@ -8,6 +8,7 @@
 //   #include "ui.h"
 //   #include "eez-project.h"
 #include "screens.h"  // TODO: change if your generated header has a different name
+#include "ui.h"
 
 // Include the header that declares set_ap_button(...) and mode_state_t / MODE_*.
 #include "ui_helpers.h"  // TODO: replace with your actual header
