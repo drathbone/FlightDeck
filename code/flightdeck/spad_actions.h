@@ -38,6 +38,18 @@ void spad_action_pause_toggle(lv_event_t * e);
 // Slew
 void spad_action_slew_toggle (lv_event_t * e);
 
+// Lights
+void spad_action_light_landing_toggle(lv_event_t * e);
+void spad_action_light_taxi_toggle   (lv_event_t * e);
+void spad_action_light_nav_toggle    (lv_event_t * e);
+void spad_action_light_strobe_toggle (lv_event_t * e);
+void spad_action_light_beacon_toggle (lv_event_t * e);
+void spad_action_light_panel_toggle  (lv_event_t * e);
+void spad_action_light_recog_toggle  (lv_event_t * e);
+void spad_action_light_wing_toggle   (lv_event_t * e);
+void spad_action_light_logo_toggle   (lv_event_t * e);
+void spad_action_light_cabin_toggle  (lv_event_t * e);
+
 #ifdef __cplusplus
 }
 #endif

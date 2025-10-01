@@ -30,7 +30,16 @@ public:
     DID_AP_VNAV_MODE    = 218,   // VNAV (optional; may not exist on all aircraft)
     DID_AP_VNAV_ACTIVE = 219,
     DID_AP_VNAV_ARMED  = 220,
-
+    DID_LIGHT_LANDING = 301,
+    DID_LIGHT_TAXI    = 302,
+    DID_LIGHT_NAV     = 303,
+    DID_LIGHT_STROBE  = 304,
+    DID_LIGHT_BEACON  = 305,
+    DID_LIGHT_PANEL   = 306,
+    DID_LIGHT_RECOG   = 307,
+    DID_LIGHT_WING    = 308,
+    DID_LIGHT_LOGO    = 309,
+    DID_LIGHT_CABIN   = 310,
   };
 
   using ChangeHandler = void (*)(DataId id, float value);
@@ -125,6 +134,17 @@ public:
   void slewOn();
   void slewOff();
 
+  // Lights
+  void lightLandingToggle();
+  void lightTaxiToggle();
+  void lightNavToggle();
+  void lightStrobeToggle();
+  void lightBeaconToggle();
+  void lightPanelToggle();
+  void lightRecogToggle();
+  void lightWingToggle();
+  void lightLogoToggle();
+  void lightCabinToggle();
 
   // ---- (Optional) Set your own fixed GUID and firmware version ----
   // If not set, defaults (constant GUID + "1.0") are used.
@@ -152,6 +172,18 @@ private:
   float _activePause = NAN;
   float _slewActive = NAN;
   float _fullPause = NAN;   // optional
+
+  // Lights
+  float _lightLanding = NAN;
+  float _lightTaxi    = NAN;
+  float _lightNav     = NAN;
+  float _lightStrobe  = NAN;
+  float _lightBeacon  = NAN;
+  float _lightPanel   = NAN;
+  float _lightRecog   = NAN;
+  float _lightWing    = NAN;
+  float _lightLogo    = NAN;
+  float _lightCabin   = NAN;
 
   // Handshake reply: 0,SPAD,<Guid>,<Name>,<SerialVersion>,<DeviceVersion>[,options...];
   void _sendInitReply();

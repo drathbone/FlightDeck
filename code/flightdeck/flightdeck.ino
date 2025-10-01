@@ -12,6 +12,7 @@
 #include <string.h>
 #include "SpadNextSerial.h"
 #include "debug.h"
+#include "ui_helpers.h"
 
 SpadNextSerial spad(Serial);
 
@@ -42,14 +43,7 @@ void RotaryBottom_ButtonPressed();
 #define COL_ARM      lv_color_hex(0xEF4444)  // red - armed
 #define COL_ACT      lv_color_hex(0xF59E0B)  // amber - active/on
 
-typedef enum { 
-    MODE_DISABLED = 0, 
-    MODE_OFF = 1, 
-    MODE_ARMED = 2, 
-    MODE_ACTIVE = 3 
-} mode_state_t;
-
-static inline void set_ap_button(lv_obj_t* container, lv_obj_t* label, mode_state_t state) {
+inline void set_ap_button(lv_obj_t* container, lv_obj_t* label, mode_state_t state) {
     lv_color_t c = (state == MODE_ACTIVE)   ? COL_ACT :
                    (state == MODE_ARMED)    ? COL_ARM :
                    (state == MODE_OFF)      ? COL_OFF : COL_DISABLED;
@@ -638,6 +632,37 @@ void onSpadChange(SpadNextSerial::DataId id, float v) {
     // Optional full pause indicator if you want it separate from active pause:
     case SpadNextSerial::DID_FULL_PAUSE:
       set_ap_button(objects.pause, objects.pause, (v>=0.5f)?MODE_ACTIVE:MODE_OFF);
+      break;
+
+    case SpadNextSerial::DID_LIGHT_LANDING:
+      set_ap_button(objects.btn_landing, objects.lbl_landing, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    case SpadNextSerial::DID_LIGHT_TAXI:
+      set_ap_button(objects.btn_taxi, objects.lbl_taxi, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    case SpadNextSerial::DID_LIGHT_NAV:
+      set_ap_button(objects.btn_nav, objects.lbl_nav, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    case SpadNextSerial::DID_LIGHT_STROBE:
+      set_ap_button(objects.btn_strobe, objects.lbl_strobe, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    case SpadNextSerial::DID_LIGHT_BEACON:
+      set_ap_button(objects.btn_beacon, objects.lbl_beacon, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    case SpadNextSerial::DID_LIGHT_PANEL:
+      set_ap_button(objects.btn_panel, objects.lbl_panel, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    case SpadNextSerial::DID_LIGHT_RECOG:
+      set_ap_button(objects.btn_recog, objects.lbl_recog, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    case SpadNextSerial::DID_LIGHT_WING:
+      set_ap_button(objects.btn_wing, objects.lbl_wing, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    case SpadNextSerial::DID_LIGHT_LOGO:
+      set_ap_button(objects.btn_logo, objects.lbl_logo, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      break;
+    case SpadNextSerial::DID_LIGHT_CABIN:
+      set_ap_button(objects.btn_cabin, objects.lbl_cabin, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
       break;
 
     default: break;

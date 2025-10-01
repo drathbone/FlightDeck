@@ -144,6 +144,17 @@ void SpadNextSerial::_processMessage(char* msg) {
       case DID_ACTIVE_PAUSE: _emitIfChanged(DID_ACTIVE_PAUSE, _activePause, val, 0.5f); break;
       case DID_SLEW_ACTIVE:  _emitIfChanged(DID_SLEW_ACTIVE,  _slewActive,  val, 0.5f); break;
       case DID_FULL_PAUSE:   _emitIfChanged(DID_FULL_PAUSE,   _fullPause,   val, 0.5f); break;
+      // Lights
+      case DID_LIGHT_LANDING: _emitIfChanged(DID_LIGHT_LANDING, _lightLanding, val, 0.5f); break;
+      case DID_LIGHT_TAXI:    _emitIfChanged(DID_LIGHT_TAXI,    _lightTaxi,    val, 0.5f); break;
+      case DID_LIGHT_NAV:     _emitIfChanged(DID_LIGHT_NAV,     _lightNav,     val, 0.5f); break;
+      case DID_LIGHT_STROBE:  _emitIfChanged(DID_LIGHT_STROBE,  _lightStrobe,  val, 0.5f); break;
+      case DID_LIGHT_BEACON:  _emitIfChanged(DID_LIGHT_BEACON,  _lightBeacon,  val, 0.5f); break;
+      case DID_LIGHT_PANEL:   _emitIfChanged(DID_LIGHT_PANEL,   _lightPanel,   val, 0.5f); break;
+      case DID_LIGHT_RECOG:   _emitIfChanged(DID_LIGHT_RECOG,   _lightRecog,   val, 0.5f); break;
+      case DID_LIGHT_WING:    _emitIfChanged(DID_LIGHT_WING,    _lightWing,    val, 0.5f); break;
+      case DID_LIGHT_LOGO:    _emitIfChanged(DID_LIGHT_LOGO,    _lightLogo,    val, 0.5f); break;
+      case DID_LIGHT_CABIN:   _emitIfChanged(DID_LIGHT_CABIN,   _lightCabin,   val, 0.5f); break;
 
 
 
@@ -214,6 +225,18 @@ void SpadNextSerial::_doSubscriptions() {
   _subscribe(DID_ACTIVE_PAUSE, "SIMCONNECT:IS IN ACTIVE PAUSE");
   _subscribe(DID_SLEW_ACTIVE,  "SIMCONNECT:IS SLEW ACTIVE");
   // _subscribe(DID_FULL_PAUSE,   "SIMCONNECT:PAUSED");   // optional (classic pause)
+
+  // Lights
+  _subscribe(DID_LIGHT_LANDING, "SIMCONNECT:LIGHT LANDING");
+  _subscribe(DID_LIGHT_TAXI,    "SIMCONNECT:LIGHT TAXI");
+  _subscribe(DID_LIGHT_NAV,     "SIMCONNECT:LIGHT NAV");
+  _subscribe(DID_LIGHT_STROBE,  "SIMCONNECT:LIGHT STROBE");
+  _subscribe(DID_LIGHT_BEACON,  "SIMCONNECT:LIGHT BEACON");
+  _subscribe(DID_LIGHT_PANEL,   "SIMCONNECT:LIGHT PANEL");
+  _subscribe(DID_LIGHT_RECOG,   "SIMCONNECT:LIGHT RECOGNITION");
+  _subscribe(DID_LIGHT_WING,    "SIMCONNECT:LIGHT WING");
+  _subscribe(DID_LIGHT_LOGO,    "SIMCONNECT:LIGHT LOGO");
+  _subscribe(DID_LIGHT_CABIN,   "SIMCONNECT:LIGHT CABIN");
 
 }
 
@@ -363,4 +386,15 @@ void SpadNextSerial::slewToggle() { if (!_allowSend(200)) return; _sendEvent("SL
 void SpadNextSerial::slewOn()     { if (!_allowSend(200)) return; _sendEventParam("SLEW_SET", 1); }
 void SpadNextSerial::slewOff()    { if (!_allowSend(200)) return; _sendEventParam("SLEW_SET", 0); }
 
+// Lights
+void SpadNextSerial::lightLandingToggle() { if (!_allowSend(200)) return; _sendEvent("LANDING_LIGHTS_TOGGLE"); }
+void SpadNextSerial::lightTaxiToggle()    { if (!_allowSend(200)) return; _sendEvent("TAXI_LIGHTS_TOGGLE"); }
+void SpadNextSerial::lightNavToggle()     { if (!_allowSend(200)) return; _sendEvent("TOGGLE_NAV_LIGHTS"); }     // common name
+void SpadNextSerial::lightStrobeToggle()  { if (!_allowSend(200)) return; _sendEvent("STROBES_TOGGLE"); }
+void SpadNextSerial::lightBeaconToggle()  { if (!_allowSend(200)) return; _sendEvent("BEACON_LIGHTS_TOGGLE"); }
+void SpadNextSerial::lightPanelToggle()   { if (!_allowSend(200)) return; _sendEvent("PANEL_LIGHTS_TOGGLE"); }
+void SpadNextSerial::lightRecogToggle()   { if (!_allowSend(200)) return; _sendEvent("RECOGNITION_LIGHTS_TOGGLE"); }
+void SpadNextSerial::lightWingToggle()    { if (!_allowSend(200)) return; _sendEvent("WING_LIGHTS_TOGGLE"); }
+void SpadNextSerial::lightLogoToggle()    { if (!_allowSend(200)) return; _sendEvent("LOGO_LIGHTS_TOGGLE"); }
+void SpadNextSerial::lightCabinToggle()   { if (!_allowSend(200)) return; _sendEvent("CABIN_LIGHTS_TOGGLE"); }
 

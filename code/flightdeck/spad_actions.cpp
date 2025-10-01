@@ -46,4 +46,16 @@ extern "C" void spad_action_pause_toggle(lv_event_t * e){ (void)e; spad.pauseTog
 // Slew
 extern "C" void spad_action_slew_toggle (lv_event_t * e){ (void)e; spad.slewToggle(); }
 
+// Lights
+void spad_action_light_landing_toggle(lv_event_t * e){ (void)e; spad.lightLandingToggle(); }
+void spad_action_light_taxi_toggle   (lv_event_t * e){ (void)e; spad.lightTaxiToggle(); }
+void spad_action_light_nav_toggle    (lv_event_t * e){ (void)e; spad.lightNavToggle(); }
+void spad_action_light_strobe_toggle (lv_event_t * e){ (void)e; spad.lightStrobeToggle(); }
+void spad_action_light_beacon_toggle (lv_event_t * e){ (void)e; spad.lightBeaconToggle(); }
+void spad_action_light_panel_toggle  (lv_event_t * e){ (void)e; spad.lightPanelToggle(); }
+void spad_action_light_recog_toggle  (lv_event_t * e){ (void)e; spad.lightRecogToggle(); }
+void spad_action_light_wing_toggle   (lv_event_t * e){ (void)e; spad.lightWingToggle(); }
+void spad_action_light_logo_toggle   (lv_event_t * e){ (void)e; spad.lightLogoToggle(); }
+void spad_action_light_cabin_toggle  (lv_event_t * e){ (void)e; spad.lightCabinToggle(); }
+
 } // extern "C"
