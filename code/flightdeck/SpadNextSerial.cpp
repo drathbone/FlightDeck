@@ -177,6 +177,14 @@ void SpadNextSerial::_processMessage(char* msg) {
       case DID_LIGHT_LOGO:    _emitIfChanged(DID_LIGHT_LOGO,    _lightLogo,    val, 0.5f); break;
       case DID_LIGHT_CABIN:   _emitIfChanged(DID_LIGHT_CABIN,   _lightCabin,   val, 0.5f); break;
 
+      // Ground controls
+      case DID_GROUNDSPEED:      _emitIfChanged(DID_GROUNDSPEED,      _groundSpeed_mps, val, -999.0f); break;
+      case DID_PARK_BRAKE:       _emitIfChanged(DID_PARK_BRAKE,       _parkBrake_pos,   val, -1.0f);   break;
+      case DID_FUEL_TOTAL_LBS:   _emitIfChanged(DID_FUEL_TOTAL_LBS,   _fuelTotal_lbs,   val, -1.0f);   break;
+      case DID_BATT_VOLTAGE:     _emitIfChanged(DID_BATT_VOLTAGE,     _battVoltage_v,   val, -1.0f);   break;
+      case DID_TOTAL_WEIGHT_LBS: _emitIfChanged(DID_TOTAL_WEIGHT_LBS, _totalWeight_lbs, val, -1.0f);   break;
+      case DID_OAT_C:            _emitIfChanged(DID_OAT_C,            _oat_c,           val, -999.0f); break;
+      case DID_GPU_ON:           _emitIfChanged(DID_GPU_ON,           _gpu_on,          val, -1.0f);   break;
 
 
       default: break;
@@ -258,6 +266,15 @@ void SpadNextSerial::_doSubscriptions() {
   _subscribe(DID_LIGHT_WING,    "SIMCONNECT:LIGHT WING");
   _subscribe(DID_LIGHT_LOGO,    "SIMCONNECT:LIGHT LOGO");
   _subscribe(DID_LIGHT_CABIN,   "SIMCONNECT:LIGHT CABIN");
+
+  // Ground Controls
+  _subscribe(DID_GROUNDSPEED,      "SIMCONNECT:GROUND VELOCITY");
+  _subscribe(DID_PARK_BRAKE,       "SIMCONNECT:BRAKE PARKING POSITION");
+  _subscribe(DID_FUEL_TOTAL_LBS,   "SIMCONNECT:FUEL TOTAL QUANTITY WEIGHT");
+  _subscribe(DID_BATT_VOLTAGE,     "SIMCONNECT:ELECTRICAL MAIN BUS VOLTAGE");
+  _subscribe(DID_TOTAL_WEIGHT_LBS, "SIMCONNECT:TOTAL WEIGHT");
+  _subscribe(DID_OAT_C,            "SIMCONNECT:AMBIENT TEMPERATURE");
+  _subscribe(DID_GPU_ON,           "SIMCONNECT:EXTERNAL POWER ON");
 
 }
 

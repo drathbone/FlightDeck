@@ -40,6 +40,14 @@ public:
     DID_LIGHT_WING    = 308,
     DID_LIGHT_LOGO    = 309,
     DID_LIGHT_CABIN   = 310,
+    // Ground Controls panel next
+    DID_GROUNDSPEED       = 401,        // SIMCONNECT:GROUND VELOCITY (m/s) -> "xxx kts"
+    DID_PARK_BRAKE        = 402,         // SIMCONNECT:BRAKE PARKING POSITION (0..1 or 0..100)
+    DID_FUEL_TOTAL_LBS    = 403,     // SIMCONNECT:FUEL TOTAL QUANTITY WEIGHT (lbs)
+    DID_BATT_VOLTAGE      = 404,       // SIMCONNECT:ELECTRICAL MAIN BUS VOLTAGE (V)
+    DID_TOTAL_WEIGHT_LBS  = 405,   // SIMCONNECT:TOTAL WEIGHT (lbs)
+    DID_OAT_C             = 406,              // SIMCONNECT:AMBIENT TEMPERATURE (°C)
+    DID_GPU_ON            = 407,             // SIMCONNECT:EXTERNAL POWER ON (bool)
   };
 
   using ChangeHandler = void (*)(DataId id, float value);
@@ -154,6 +162,16 @@ public:
   int8_t _beaconState = -1;
   int8_t _navState    = -1;  // 0 off, 1 on, -1 unknown
   int8_t _strobeState = -1;
+
+  // Ground controls
+  // --- Ground page cached values ---
+  float _groundSpeed_mps = -999.0f;
+  float _parkBrake_pos   = -1.0f;
+  float _fuelTotal_lbs   = -1.0f;
+  float _battVoltage_v   = -1.0f;
+  float _totalWeight_lbs = -1.0f;
+  float _oat_c           = -999.0f;
+  float _gpu_on          = -1.0f;   // 0/1
 
   // ---- (Optional) Set your own fixed GUID and firmware version ----
   // If not set, defaults (constant GUID + "1.0") are used.

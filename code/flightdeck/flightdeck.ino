@@ -53,6 +53,22 @@ void set_ap_button(lv_obj_t* container, lv_obj_t* label, mode_state_t state) {
 }
 // ---END---
 
+// Small local helper for thousands separators (non-locale)
+static void format_commas_ll(long long n, char* out, size_t outsz) {
+    char tmp[32];
+    snprintf(tmp, sizeof(tmp), "%lld", n);
+    const char* s = tmp;
+    int len = (int)strlen(s);
+    int first = len % 3 ? len % 3 : 3;
+    int pos = 0;
+    for (int i = 0; i < len && pos < (int)outsz - 1; ) {
+        int run = (i == 0) ? first : 3;
+        for (int j = 0; j < run && pos < (int)outsz - 1; ++j) out[pos++] = s[i++];
+        if (i < len && pos < (int)outsz - 1) out[pos++] = ',';
+    }
+    out[pos] = '\0';
+}
+
 // ---- Encoder helper ----
 struct RotaryEncoder {
   uint8_t clkPin;
@@ -669,6 +685,70 @@ void onSpadChange(SpadNextSerial::DataId id, float v) {
     case SpadNextSerial::DID_LIGHT_CABIN:
       set_ap_button(objects.btn_cabin, objects.lbl_cabin, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
       break;
+
+    // Ground controls
+    case SpadNextSerial::DID_GROUNDSPEED: {
+        // v is meters/second -> knots
+        static char s[16];
+        const float kts = v * 1.9438445f;
+        const int   ikt = (int)lroundf(kts);
+        snprintf(s, sizeof(s), "%d kts", ikt);
+        set_var_v_ground_speed(s);   // TODO: hook to your UI variable/label
+        break;
+    }
+
+    case SpadNextSerial::DID_PARK_BRAKE: {
+        static char s[8];
+        // Normalize 0..1 or 0..100 to 0..1
+        float norm = v;
+        if (norm > 1.0f) norm *= 0.01f;
+        const bool set = norm >= 0.5f;
+        snprintf(s, sizeof(s), "%s", set ? "SET" : "OFF");
+        set_var_v_parking_brake(s);  // TODO
+        break;
+    }
+
+    case SpadNextSerial::DID_FUEL_TOTAL_LBS: {
+        static char num[24], s[32];
+        long long lbs = (long long)llroundf(v);
+        format_commas_ll(lbs, num, sizeof(num));
+        snprintf(s, sizeof(s), "%s lbs", num);
+        set_var_v_fuel_total(s);     // TODO
+        break;
+    }
+
+    case SpadNextSerial::DID_BATT_VOLTAGE: {
+        static char s[16];
+        // One decimal place, e.g. "24.7V"
+        snprintf(s, sizeof(s), "%.1fV", v);
+        set_var_v_battery(s);   // TODO
+        break;
+    }
+
+    case SpadNextSerial::DID_TOTAL_WEIGHT_LBS: {
+        static char num[24], s[32];
+        long long lbs = (long long)llroundf(v);
+        format_commas_ll(lbs, num, sizeof(num));
+        snprintf(s, sizeof(s), "%s lbs", num);
+        set_var_v_weight(s);   // TODO
+        break;
+    }
+
+    case SpadNextSerial::DID_OAT_C: {
+        static char s[16];
+        const int ic = (int)lroundf(v);
+        snprintf(s, sizeof(s), "%d°C", ic);
+        set_var_v_temp(s);            // TODO
+        break;
+    }
+
+    case SpadNextSerial::DID_GPU_ON: {
+        static char s[8];
+        const bool on = (v >= 0.5f);
+        snprintf(s, sizeof(s), "%s", on ? "ON" : "OFF");
+        set_var_v_gpu_status(s);     // TODO
+        break;
+    }
 
     default: break;
   }
