@@ -71,6 +71,7 @@ void SpadNextSerial::setDeviceVersion(const char* ver)   { if (ver && *ver)     
 void SpadNextSerial::poll() {
   while (_io.available()) {
     char c = (char)_io.read();
+    if (c == '\r') continue;         // <<< ignore CR so tokens don't carry \r
     if (_esc) { if (_rxPos < RX_SIZE - 1) _rx[_rxPos++] = c; _esc = false; continue; }
     if (c == '/') { _esc = true; continue; }
     if (c == ';') {
@@ -81,6 +82,50 @@ void SpadNextSerial::poll() {
     }
     if (_rxPos < RX_SIZE - 1) _rx[_rxPos++] = c;
   }
+
+  // If we ACKed SCANSTATE but haven't seen START soon, re-ACK once or twice.
+  if (_scanAckMs && !_started) {
+    uint32_t now = millis();
+    if ((uint32_t)(now - _scanAckMs) >= 700) {     // try ~0.7s; tune 500–1000ms if needed
+      if (_scanAckRetry < 2) {
+        _scanAckRetry++;
+        _scanAckMs = now;
+        DBG.printf("[WARN] No START yet, re-ACKing SCANSTATE (retry %u)\n", _scanAckRetry);
+        _sendBegin(0);
+        _io.print("STATESCAN");
+        _sendEnd();
+        _io.flush();
+      } else {
+        DBG.println("[ERROR] No START after SCANSTATE ack retries.");
+        _scanAckMs = 0; // stop retrying
+      }
+    }
+  }
+
+  // Do deferred SCANSTATE dump only after we've seen START,
+  // so we never block receiving the START handshake.
+  if (_needStateDump && _started) {
+    _emitAllStatePaced();   // make sure this ends with _io.flush()
+    _needStateDump = false;
+  }
+
+  // Retry SUBSCRIBE burst if we started but haven't seen first data yet.
+  // This stays quiet once _subsAcked flips to true (on first chan-5 value).
+  if (_started && _subsSent && !_subsAcked) {
+    uint32_t now = millis();
+    if ((uint32_t)(now - _subsSentMs) >= 1000) {   // 1s timeout
+      if (_subsRetry < 2) {
+        _subsRetry++;
+        _subsSentMs = now;
+        DBG.printf("[WARN] No first data after subscribe, retry %u\n", _subsRetry);
+        _sendSubscriptionsPaced();   // re-send your _doSubscriptions() list
+      } else {
+        DBG.println("[ERROR] Subscriptions not acknowledged after retries.");
+      }
+    }
+  }
+
+
 }
 
 // -- Function to stop sending repeated events
@@ -116,34 +161,76 @@ void SpadNextSerial::_processMessage(char* msg) {
   }
   if (t == 0) return;
 
+  // NEW: trim tokens (remove \r, \n, spaces, tabs at end)
+  auto rtrim_tok = [](char* s) {
+    size_t n = strlen(s);
+    while (n && (s[n-1] == '\r' || s[n-1] == '\n' || s[n-1] == ' ' || s[n-1] == '\t')) s[--n] = '\0';
+  };
+  for (uint8_t i = 0; i < t; ++i) rtrim_tok((char*)tok[i]);
+
   int chan = atoi(tok[0]);
 
-  // 0,INIT,<SerialVersion>,<AppVersion>,<AuthToken>
-  if (chan == 0 && t >= 2 && strcmp(tok[1], "INIT") == 0) {
-    _sendInitReply();   // reply with 0,SPAD,...
+  // 0,INIT,...
+  if (chan == 0 && t >= 2 && strncmp(tok[1], "INIT", 4) == 0) {
+    _scanAckMs = 0;
+    _scanAckRetry = 0;
+    _needStateDump = false;   // avoid stale deferred dumps after a reconnect
+    DBG.println("[HANDSHAKE] INIT received");
+    _seenInit   = true;
+    _started    = false;
+    _subsSent   = false;
+    _subsAcked  = false;
+    _subsRetry  = 0;
+    _subsSentMs = 0;
+    _initSeenMs = millis();
+    _sendInitReply();
     return;
   }
 
   // 0,CONFIG[,...]  -> must ACK with 0,CONFIG; then we may subscribe
-  if (chan == 0 && t >= 2 && strcmp(tok[1], "CONFIG") == 0) {
+  if (chan == 0 && t >= 2 && strncmp(tok[1], "CONFIG", 6) == 0) {
     _handleConfig();
     return;
   }
 
-  // 2,START;  -> SPAD is ready; now it's safe to send device commands like SUBSCRIBE
-  if (chan == 2 && t >= 2 && strcmp(tok[1], "START") == 0) {
-    if (!_didSubscribe) { _doSubscriptions(); _didSubscribe = true; }
+  // 2,START
+  if (chan == 2 && t >= 2 && strncmp(tok[1], "START", 5) == 0) {
+    if (!_started) {
+      DBG.println("[HANDSHAKE] START received");
+      _started = true;
+      _scheduleSubscribeBurst();
+    } else {
+      DBG.println("[HANDSHAKE] START (duplicate) ignored");
+    }
+
+    _scanAckMs = 0;           // <-- stop re-ACK attempts now
+
     return;
   }
 
-  // 0,SCANSTATE; -> we can either do a 2-step scan or just end it
-  if (chan == 0 && t >= 2 && strcmp(tok[1], "SCANSTATE") == 0) {
-    _handleScanState();
+  // 0,SCANSTATE / STATESCAN
+  if (chan == 0 && t >= 2 && (strncmp(tok[1], "SCANSTATE", 9) == 0 || strncmp(tok[1], "STATESCAN", 9) == 0)) {
+    DBG.println("[HANDSHAKE] SCANSTATE received");
+
+    // ACK FIRST so SPAD can move on to START immediately
+    _sendBegin(0);
+    _io.print("STATESCAN");
+    _sendEnd();
+    _io.flush();
+    DBG.println("[HANDSHAKE] SCANSTATE ack sent (awaiting START)");
+
+    // Defer the heavy dump to poll()
+    _needStateDump = true;
+
+      // Start re-ACK timer
+    _scanAckMs = millis();
+    _scanAckRetry = 0;
+
     return;
   }
 
   // 0,PING,<ticket>  ->  0,PONG,<ticket>
-  if (chan == 0 && t >= 2 && strcmp(tok[1], "PING") == 0) {
+  if (chan == 0 && t >= 2 && strncmp(tok[1], "PING", 4) == 0) {
     _sendBegin(0);
     _io.print("PONG,");
     if (t >= 3) _printEscaped(tok[2]); // echo ticket if present
@@ -151,8 +238,39 @@ void SpadNextSerial::_processMessage(char* msg) {
     return;
   }
 
+  // ---- Channel 2 housekeeping (post-start). If we haven't seen START,
+  // treat these as an implied START so we don't stall on a dropped line.
+  if (chan == 2 && t >= 2) {
+    // exact START stays as you already have (strncmp "START", 5)
+    if (strncmp(tok[1], "PROVIDER", 8) == 0)            { _markStartedIfNeeded("PROVIDER");         return; }
+    if (strncmp(tok[1], "PROFILECHANGED", 14) == 0)     { _markStartedIfNeeded("PROFILECHANGED");   return; }
+    if (strncmp(tok[1], "AIRCRAFTCHANGED", 15) == 0)    { _markStartedIfNeeded("AIRCRAFTCHANGED");  return; }
+    // ignore other chan-2 items you don't care about
+  }
+
+  if (chan == 5) {
+    if (!_subsAcked) {
+      _subsAcked = true;
+      DBG.println("[INFO] First value received; subscriptions confirmed.");
+    }
+    // ... your existing channel-5 handling ...
+  }
+
+  // --- 5,SUBSCRIBE-OK,<id>  (SPAD.neXt ack) ---
+  if (chan == 5 && t >= 2 && strncmp(tok[1], "SUBSCRIBE-OK", 12) == 0) {
+    _subsAcked = true;
+    return;
+  }
+
   // 5,<index>,<value>
   if (chan == 5 && t >= 3) {
+    // NEW: confirm subs on first data
+    if (!_subsAcked) {
+      _subsAcked = true;
+      _subsRetry = 0;
+      DBG.println("[INFO] First data received; subscriptions confirmed.");
+    }
+
     uint16_t idx = (uint16_t)atoi(tok[1]);
     float val = atof(tok[2]);
     switch (idx) {
@@ -248,6 +366,16 @@ void SpadNextSerial::_processMessage(char* msg) {
 }
 
 // ---------------- phase helpers ----------------
+static inline void _yieldPaced(uint16_t i, uint16_t every = 6) {
+  if ((i % every) == 0) delay(2); // let USB drain a little
+}
+
+void SpadNextSerial::_emitAllStatePaced() {
+  // TEMP: no-op so we compile. You can paste your existing STATESCAN
+  // state-dump here and sprinkle _yieldPaced(++i, 8) inside its loop.
+    _io.flush();
+}
+
 void SpadNextSerial::_handleConfig() {
   // End the CONFIG phase (we're not declaring a pin-map etc.)
   _sendBegin(0);
@@ -260,6 +388,34 @@ void SpadNextSerial::_handleScanState() {
   _sendBegin(0);
   _io.print("STATESCAN");
   _sendEnd();
+}
+
+void SpadNextSerial::_scheduleSubscribeBurst() {
+  if (_subsSent) return;
+  _sendSubscriptionsPaced();
+  _subsRetry  = 0;
+}
+
+void SpadNextSerial::_sendSubscriptionsPaced() {
+  DBG.println("[INFO] SUBSCRIBE burst starting...");
+  uint32_t t0 = millis();
+
+  _subPaceCount = 0;          // << reset pacing counter at the start of the burst
+
+  // IMPORTANT: emit using your existing list
+  _doSubscriptions();        // <-- your function
+
+  // ensure the USB buffer is pushed
+  _io.flush();
+
+  // Treat as acknowledged; SPAD.neXt doesn’t send SUBSCRIBE-OK on Serial V2
+  _subsSent   = true;
+  //_subsAcked  = true;           // <— add this line
+  //_subsSentMs = millis();
+  _subsSentMs = t0;
+  _subsRetry  = 0;
+
+  DBG.printf("[INFO] SUBSCRIBE burst sent. dt=%lums\n", (unsigned long)(millis() - t0));
 }
 
 void SpadNextSerial::_doSubscriptions() {
@@ -367,6 +523,11 @@ void SpadNextSerial::_subscribe(uint16_t index, const char* path, const char* un
   _printEscaped(path);
   if (unit && *unit) { _io.print(','); _printEscaped(unit); }
   _sendEnd();
+
+  // --- micro-pacing every 6 lines to keep CDC happy ---
+  if ((++_subPaceCount % 6) == 0) {
+    delay(2);
+  }
 }
 
 // 4,<EVENT>[,<VALUE>];

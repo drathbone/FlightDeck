@@ -2,6 +2,7 @@
 #pragma once
 #include <Arduino.h>
 #include <math.h>
+#include "debug.h"
 
 class SpadNextSerial {
 public:
@@ -186,6 +187,20 @@ private:
   uint32_t _lastSendMs = 0;   // shared timestamp
   bool _allowSend(uint32_t intervalMs);
 
+  inline void _markStartedIfNeeded(const char* why) {
+    if (!_started) {
+      _started = true;
+      DBG.printf("[HANDSHAKE] START (implied by %s)\n", why);
+      _scheduleSubscribeBurst();
+      _scanAckMs = 0;          // stop re-ACKing SCANSTATE
+    }
+  }
+
+  uint16_t _subPaceCount = 0;  // counts subscribe lines in the current burst
+  bool _needStateDump = false;   // defer SCANSTATE dump
+  uint32_t _scanAckMs   = 0;   // when we last ACKed SCANSTATE
+  uint8_t  _scanAckRetry = 0;  // how many times we've re-ACKed
+
   bool _didSubscribe = false;
   float _apHdgDeg       = NAN;
   float _apAltFt        = NAN;
@@ -212,6 +227,22 @@ private:
   float _lightWing    = NAN;
   float _lightLogo    = NAN;
   float _lightCabin   = NAN;
+
+  // === Handshake / subscribe state ===
+  bool     _seenInit      = false;
+  bool     _started       = false;      // set after START or fallback
+  bool     _subsSent      = false;      // we have fired the subscribe burst
+  bool     _subsAcked     = false;      // saw at least one SUBSCRIBE-OK
+  uint32_t _subsSentMs    = 0;          // when we last sent the burst
+  uint8_t  _subsRetry     = 0;          // how many retries we’ve done
+
+  // NEW: timestamp when INIT was seen (for safety timer)
+  uint32_t _initSeenMs    = 0;
+
+  // === New helpers ===
+  void _scheduleSubscribeBurst();
+  void _sendSubscriptionsPaced();
+  void _emitAllStatePaced();
 
   // Handshake reply: 0,SPAD,<Guid>,<Name>,<SerialVersion>,<DeviceVersion>[,options...];
   void _sendInitReply();
