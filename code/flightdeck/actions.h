@@ -49,6 +49,9 @@ extern void action_btn_doors(lv_event_t * e);
 extern void action_btn_deice(lv_event_t * e);
 extern void action_btn_autostart(lv_event_t * e);
 extern void action_e_aircraft(lv_event_t * e);
+extern void action_btn_rescan_pressed(lv_event_t * e);
+extern void action_btn_copy_debug_pressed(lv_event_t * e);
+extern void action_btn_engine_mgmt_pressed(lv_event_t * e);
 
 
 #ifdef __cplusplus

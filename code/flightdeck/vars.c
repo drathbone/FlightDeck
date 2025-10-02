@@ -294,3 +294,153 @@ void set_var_v_gpu_status(const char *value) {
   strncpy(v_gpu_status, value, sizeof(v_gpu_status) - 1);
   v_gpu_status[sizeof(v_gpu_status) - 1] = '\0';
 }
+
+// Aircraft info page vars
+static char v_ac_title[24] = "Full Aircraft Title";
+const char *get_var_v_ac_title(){
+  return v_ac_title;
+}
+void set_var_v_ac_title(const char *value) {
+  if (!value) {
+    v_ac_title[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_ac_title, value, sizeof(v_ac_title) - 1);
+  v_ac_title[sizeof(v_ac_title) - 1] = '\0';
+}
+
+
+static char v_atc_model[24] = "Full ATC Model";
+const char *get_var_v_atc_model(){
+  return v_atc_model;
+}
+void set_var_v_atc_model(const char *value) {
+  if (!value) {
+    v_atc_model[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_atc_model, value, sizeof(v_atc_model) - 1);
+  v_atc_model[sizeof(v_atc_model) - 1] = '\0';
+}
+
+
+static char v_icao_type[24] = "Full ICAO Type";
+const char *get_var_v_icao_type(){
+  return v_icao_type;
+}
+void set_var_v_icao_type(const char *value) {
+  if (!value) {
+    v_icao_type[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_icao_type, value, sizeof(v_icao_type) - 1);
+  v_icao_type[sizeof(v_icao_type) - 1] = '\0';
+}
+
+
+static char v_pushback_state[16] = "ATTACHED";
+const char *get_var_v_pushback_state(){
+  return v_pushback_state;
+}
+void set_var_v_pushback_state(const char *value) {
+  if (!value) {
+    v_pushback_state[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_pushback_state, value, sizeof(v_pushback_state) - 1);
+  v_pushback_state[sizeof(v_pushback_state) - 1] = '\0';
+}
+
+
+static char v_exit1_state[16] = "OFF";
+const char *get_var_v_exit1_state(){
+  return v_exit1_state;
+}
+void set_var_v_exit1_state(const char *value) {
+  if (!value) {
+    v_exit1_state[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_exit1_state, value, sizeof(v_exit1_state) - 1);
+  v_exit1_state[sizeof(v_exit1_state) - 1] = '\0';
+}
+
+
+static char v_exit2_state[16] = "OFF";
+const char *get_var_v_exit2_state(){
+  return v_exit2_state;
+}
+void set_var_v_exit2_state(const char *value) {
+  if (!value) {
+    v_exit2_state[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_exit2_state, value, sizeof(v_exit2_state) - 1);
+  v_exit2_state[sizeof(v_exit2_state) - 1] = '\0';
+}
+
+
+static char v_profile_name[17] = "test spad profile";
+const char *get_var_v_profile_name(){
+  return v_profile_name;
+}
+void set_var_v_profile_name(const char *value) {
+  if (!value) {
+    v_profile_name[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_profile_name, value, sizeof(v_profile_name) - 1);
+  v_profile_name[sizeof(v_profile_name) - 1] = '\0';
+}
+
+
+static char v_last_rescan[17] = "10/05/25 11:54:03";
+const char *get_var_v_last_rescan(){
+  return v_last_rescan;
+}
+void set_var_v_last_rescan(const char *value) {
+  if (!value) {
+    v_last_rescan[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_last_rescan, value, sizeof(v_last_rescan) - 1);
+  v_last_rescan[sizeof(v_last_rescan) - 1] = '\0';
+}
+
+
+static char v_subs_count[16] = "7";
+const char *get_var_v_subs_count(){
+  return v_subs_count;
+}
+void set_var_v_subs_count(const char *value) {
+  if (!value) {
+    v_subs_count[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_subs_count, value, sizeof(v_subs_count) - 1);
+  v_subs_count[sizeof(v_subs_count) - 1] = '\0';
+}
+
+
+static char v_messages[16] = "messages";
+const char *get_var_v_messages(){
+  return v_messages;
+}
+void set_var_v_messages(const char *value) {
+  if (!value) {
+    v_messages[0] = '\0';
+    return;
+  }
+  // Safe copy & truncate
+  strncpy(v_messages, value, sizeof(v_messages) - 1);
+  v_messages[sizeof(v_messages) - 1] = '\0';
+}

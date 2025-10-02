@@ -34,7 +34,17 @@ enum FlowGlobalVariables {
     FLOW_GLOBAL_VARIABLE_V_BATTERY = 16,
     FLOW_GLOBAL_VARIABLE_V_WEIGHT = 17,
     FLOW_GLOBAL_VARIABLE_V_TEMP = 18,
-    FLOW_GLOBAL_VARIABLE_V_GPU_STATUS = 19
+    FLOW_GLOBAL_VARIABLE_V_GPU_STATUS = 19,
+    FLOW_GLOBAL_VARIABLE_V_AC_TITLE = 20,
+    FLOW_GLOBAL_VARIABLE_V_ATC_MODEL = 21,
+    FLOW_GLOBAL_VARIABLE_V_ICAO_TYPE = 22,
+    FLOW_GLOBAL_VARIABLE_V_PUSHBACK_STATE = 23,
+    FLOW_GLOBAL_VARIABLE_V_EXIT1_STATE = 24,
+    FLOW_GLOBAL_VARIABLE_V_EXIT2_STATE = 25,
+    FLOW_GLOBAL_VARIABLE_V_PROFILE_NAME = 26,
+    FLOW_GLOBAL_VARIABLE_V_LAST_RESCAN = 27,
+    FLOW_GLOBAL_VARIABLE_V_SUBS_COUNT = 28,
+    FLOW_GLOBAL_VARIABLE_V_MESSAGES = 29
 };
 
 // Native global variables
@@ -79,6 +89,26 @@ extern const char *get_var_v_temp();
 extern void set_var_v_temp(const char *value);
 extern const char *get_var_v_gpu_status();
 extern void set_var_v_gpu_status(const char *value);
+extern const char *get_var_v_ac_title();
+extern void set_var_v_ac_title(const char *value);
+extern const char *get_var_v_atc_model();
+extern void set_var_v_atc_model(const char *value);
+extern const char *get_var_v_icao_type();
+extern void set_var_v_icao_type(const char *value);
+extern const char *get_var_v_pushback_state();
+extern void set_var_v_pushback_state(const char *value);
+extern const char *get_var_v_exit1_state();
+extern void set_var_v_exit1_state(const char *value);
+extern const char *get_var_v_exit2_state();
+extern void set_var_v_exit2_state(const char *value);
+extern const char *get_var_v_profile_name();
+extern void set_var_v_profile_name(const char *value);
+extern const char *get_var_v_last_rescan();
+extern void set_var_v_last_rescan(const char *value);
+extern const char *get_var_v_subs_count();
+extern void set_var_v_subs_count(const char *value);
+extern const char *get_var_v_messages();
+extern void set_var_v_messages(const char *value);
 
 
 #ifdef __cplusplus

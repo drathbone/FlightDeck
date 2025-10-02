@@ -126,3 +126,8 @@ void action_btn_gpu(lv_event_t * e) {}
 void action_btn_doors(lv_event_t * e) {}
 void action_btn_deice(lv_event_t * e) {}
 void action_btn_autostart(lv_event_t * e) {}
+
+// Aircraft Info page buttons
+void action_btn_rescan_pressed(lv_event_t * e) {}
+void action_btn_copy_debug_pressed(lv_event_t * e) {}
+void action_btn_engine_mgmt_pressed(lv_event_t * e) {}
