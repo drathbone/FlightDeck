@@ -1,6 +1,8 @@
 // spad_actions.cpp  (C++ file)
 extern "C" {
   #include "lvgl.h"
+#include "ui_generated_c.h"
+#include "ui_capi.h"
   #include "spad_actions.h"
 }
 

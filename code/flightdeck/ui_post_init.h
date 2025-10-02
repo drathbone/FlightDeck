@@ -1,3 +1,4 @@
+#include "ui_generated_c.h"
 // ui_post_init.h
 #pragma once
 

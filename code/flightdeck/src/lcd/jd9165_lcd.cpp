@@ -1,4 +1,5 @@
 #include "sdkconfig.h"
+#include "ui_generated_c.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -11,6 +12,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "Arduino.h"
+#include "ui_capi.h"
 
 #include "esp_lcd_jd9165.h"
 #include "jd9165_lcd.h"

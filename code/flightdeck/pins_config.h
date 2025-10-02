@@ -1,3 +1,4 @@
+#include "ui_generated_c.h"
 #pragma once
 
 #define LCD_H_RES 1024

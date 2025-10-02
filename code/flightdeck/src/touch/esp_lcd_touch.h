@@ -13,6 +13,7 @@
 
 #include <stdbool.h>
 #include "sdkconfig.h"
+#include "ui_generated_c.h"
 #include "esp_err.h"
 #include "driver/gpio.h"
 #include "esp_lcd_panel_io.h"

@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
+#include "ui_generated_c.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_system.h"

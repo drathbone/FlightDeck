@@ -1,3 +1,4 @@
+#include "ui_generated_c.h"
 #ifndef _GT911_TOUCH_H
 #define _GT911_TOUCH_H
 #include <stdio.h>

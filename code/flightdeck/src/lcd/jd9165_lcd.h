@@ -1,3 +1,4 @@
+#include "ui_generated_c.h"
 #ifndef _JD9165_LCD_H
 #define _JD9165_LCD_H
 #include <stdio.h>

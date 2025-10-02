@@ -13,6 +13,7 @@
 
 #include "esp_lcd_touch.h"
 
+#include "ui_generated_c.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

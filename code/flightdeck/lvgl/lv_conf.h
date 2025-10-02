@@ -1,3 +1,4 @@
+#include "ui_generated_c.h"
 /**
  * @file lv_conf.h
  * Configuration file for v8.3.0-dev

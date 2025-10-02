@@ -2,13 +2,13 @@
 #pragma GCC optimize("O3")
 
 #include "FocusRouter.h"
+#include "ui_generated_c.h"
 #include <Arduino.h>
+#include "ui_capi.h"
 #include "lvgl.h"
 #include "pins_config.h"
 #include "src/lcd/jd9165_lcd.h"
 #include "src/touch/gt911_touch.h"
-#include "ui.h"
-#include "vars.h"
 #include <string.h>
 #include "SpadNextSerial.h"
 #include "debug.h"
@@ -39,18 +39,11 @@ void RotaryBottom_TurnRight();
 void RotaryBottom_ButtonPressed();
 
 // This block is a helper to change label/text colours depending on off/standby/active status
-#define COL_DISABLED lv_color_hex(0x94A3B8)  // grey - not available
-#define COL_OFF      lv_color_hex(0x22D3EE)  // cyan - available/off
-#define COL_ARM      lv_color_hex(0xEF4444)  // red - armed
-#define COL_ACT      lv_color_hex(0xF59E0B)  // amber - active/on
+// grey - not available
+// cyan - available/off
+// red - armed
+// amber - active/on
 
-void set_ap_button(lv_obj_t* container, lv_obj_t* label, mode_state_t state) {
-    lv_color_t c = (state == MODE_ACTIVE)   ? COL_ACT :
-                   (state == MODE_ARMED)    ? COL_ARM :
-                   (state == MODE_OFF)      ? COL_OFF : COL_DISABLED;
-    lv_obj_set_style_border_color(container, c, LV_PART_MAIN);
-    lv_obj_set_style_text_color(label, c, LV_PART_MAIN);
-}
 // ---END---
 
 // Small local helper for thousands separators (non-locale)
@@ -559,77 +552,77 @@ void onSpadChange(SpadNextSerial::DataId id, float v) {
     
     // -------- AP master (ON/OFF -> ACTIVE/OFF) --------
     case SpadNextSerial::DID_AP_MASTER_STATE:
-      set_ap_button(objects.b_ap,  objects.obj18, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_ap,  objects.obj18, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     // -------- Flight Director (pick one of these sections) --------
     // If you subscribed to indexed FD :1 and :2 (recommended for broad compatibility):
     case SpadNextSerial::DID_FD_STATE_1:
       fd1 = (v >= 0.5f);
-      set_ap_button(objects.b_fd,  objects.obj19, (fd1 || fd2) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_fd,  objects.obj19, (fd1 || fd2) ? ui_state_t::Active : ui_state_t::Off);
       break;
     case SpadNextSerial::DID_FD_STATE_2:
       fd2 = (v >= 0.5f);
-      set_ap_button(objects.b_fd,  objects.obj19, (fd1 || fd2) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_fd,  objects.obj19, (fd1 || fd2) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     // -------- Lateral / vertical modes (ACTIVE/OFF) --------
     case SpadNextSerial::DID_AP_HDG_MODE:
-      set_ap_button(objects.b_hdg, objects.obj20, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_hdg, objects.obj20, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     case SpadNextSerial::DID_AP_NAV_MODE:
-      set_ap_button(objects.b_nav, objects.obj21, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_nav, objects.obj21, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     case SpadNextSerial::DID_AP_ALT_MODE:
-      set_ap_button(objects.b_alt, objects.obj22, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_alt, objects.obj22, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     case SpadNextSerial::DID_AP_VS_MODE:
-      set_ap_button(objects.b_vs,  objects.obj23,  (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_vs,  objects.obj23,  (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     // -------- APR has ARMED (amber) vs ACTIVE (cyan) --------
     case SpadNextSerial::DID_APR_ARMED:
       aprArmed = (v >= 0.5f);
       // show amber only when not active
-      set_ap_button(objects.b_apr, objects.obj24,
-                    aprActive ? MODE_ACTIVE : (aprArmed ? MODE_ARMED : MODE_OFF));
+      ui_set_state(objects.b_apr, objects.obj24,
+                    aprActive ? ui_state_t::Active : (aprArmed ? ui_state_t::Armed : ui_state_t::Off));
       break;
 
     case SpadNextSerial::DID_APR_ACTIVE:
       aprActive = (v >= 0.5f);
-      set_ap_button(objects.b_apr, objects.obj24,
-                    aprActive ? MODE_ACTIVE : (aprArmed ? MODE_ARMED : MODE_OFF));
+      ui_set_state(objects.b_apr, objects.obj24,
+                    aprActive ? ui_state_t::Active : (aprArmed ? ui_state_t::Armed : ui_state_t::Off));
       break;
 
     case SpadNextSerial::DID_AP_BC_MODE:
-      set_ap_button(objects.b_bc,  objects.obj33,  (v>=0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_bc,  objects.obj33,  (v>=0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     case SpadNextSerial::DID_AP_YD_MODE:
-      set_ap_button(objects.b_yd,  objects.obj34,  (v>=0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_yd,  objects.obj34,  (v>=0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     case SpadNextSerial::DID_AP_LVL_MODE:
-      set_ap_button(objects.b_lvl, objects.obj35, (v>=0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_lvl, objects.obj35, (v>=0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     case SpadNextSerial::DID_AP_VNAV_MODE:
-      set_ap_button(objects.b_vnav, objects.obj36, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.b_vnav, objects.obj36, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     case SpadNextSerial::DID_AP_VNAV_ARMED:
       vnavArmed = (v >= 0.5f);
-      set_ap_button(objects.b_vnav, objects.obj36,
-                    vnavActive ? MODE_ACTIVE : (vnavArmed ? MODE_ARMED : MODE_OFF));
+      ui_set_state(objects.b_vnav, objects.obj36,
+                    vnavActive ? ui_state_t::Active : (vnavArmed ? ui_state_t::Armed : ui_state_t::Off));
       break;
 
     case SpadNextSerial::DID_AP_VNAV_ACTIVE:
       vnavActive = (v >= 0.5f);
-      set_ap_button(objects.b_vnav, objects.obj36,
-                    vnavActive ? MODE_ACTIVE : (vnavArmed ? MODE_ARMED : MODE_OFF));
+      ui_set_state(objects.b_vnav, objects.obj36,
+                    vnavActive ? ui_state_t::Active : (vnavArmed ? ui_state_t::Armed : ui_state_t::Off));
       break;
 
     case SpadNextSerial::DID_SIM_RATE: {
@@ -638,52 +631,52 @@ void onSpadChange(SpadNextSerial::DataId id, float v) {
         set_var_v_simrate(s);
 
         // Highlight when faster than real-time
-        set_ap_button(objects.sim_rate, objects.l_simrate, (v > 1.0f) ? MODE_ACTIVE : MODE_OFF);
+        ui_set_state(objects.sim_rate, objects.l_simrate, (v > 1.0f) ? ui_state_t::Active : ui_state_t::Off);
         break;
     }
     
     case SpadNextSerial::DID_ACTIVE_PAUSE:
-      set_ap_button(objects.active_pause, objects.obj38, (v>=0.5f)?MODE_ACTIVE:MODE_OFF);
+      ui_set_state(objects.active_pause, objects.obj38, (v>=0.5f)?ui_state_t::Active:ui_state_t::Off);
       break;
 
     //case SpadNextSerial::DID_SLEW_ACTIVE:
-    //  set_ap_button(objects.b_slew, objects.l_slew, (v>=0.5f)?MODE_ACTIVE:MODE_OFF);
+    //  ui_set_state(objects.b_slew, objects.l_slew, (v>=0.5f)?ui_state_t::Active:ui_state_t::Off);
     //  break;
 
     // Optional full pause indicator if you want it separate from active pause:
     case SpadNextSerial::DID_FULL_PAUSE:
-      set_ap_button(objects.pause, objects.pause, (v>=0.5f)?MODE_ACTIVE:MODE_OFF);
+      ui_set_state(objects.pause, objects.pause, (v>=0.5f)?ui_state_t::Active:ui_state_t::Off);
       break;
 
     case SpadNextSerial::DID_LIGHT_LANDING:
-      set_ap_button(objects.btn_landing, objects.lbl_landing, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.btn_landing, objects.lbl_landing, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
     case SpadNextSerial::DID_LIGHT_TAXI:
-      set_ap_button(objects.btn_taxi, objects.lbl_taxi, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.btn_taxi, objects.lbl_taxi, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
     case SpadNextSerial::DID_LIGHT_NAV:
-      set_ap_button(objects.btn_nav, objects.lbl_nav, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.btn_nav, objects.lbl_nav, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
     case SpadNextSerial::DID_LIGHT_STROBE:
-      set_ap_button(objects.btn_strobe, objects.lbl_strobe, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.btn_strobe, objects.lbl_strobe, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
     case SpadNextSerial::DID_LIGHT_BEACON:
-      set_ap_button(objects.btn_beacon, objects.lbl_beacon, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.btn_beacon, objects.lbl_beacon, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
     case SpadNextSerial::DID_LIGHT_PANEL:
-      set_ap_button(objects.btn_panel, objects.lbl_panel, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.btn_panel, objects.lbl_panel, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
     case SpadNextSerial::DID_LIGHT_RECOG:
-      set_ap_button(objects.btn_recog, objects.lbl_recog, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.btn_recog, objects.lbl_recog, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
     case SpadNextSerial::DID_LIGHT_WING:
-      set_ap_button(objects.btn_wing, objects.lbl_wing, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.btn_wing, objects.lbl_wing, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
     case SpadNextSerial::DID_LIGHT_LOGO:
-      set_ap_button(objects.btn_logo, objects.lbl_logo, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.btn_logo, objects.lbl_logo, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
     case SpadNextSerial::DID_LIGHT_CABIN:
-      set_ap_button(objects.btn_cabin, objects.lbl_cabin, (v >= 0.5f) ? MODE_ACTIVE : MODE_OFF);
+      ui_set_state(objects.btn_cabin, objects.lbl_cabin, (v >= 0.5f) ? ui_state_t::Active : ui_state_t::Off);
       break;
 
     // Ground controls

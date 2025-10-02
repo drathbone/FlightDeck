@@ -1,3 +1,5 @@
+#include "ui_capi.h"
+#include "ui_generated_c.h"
 #include "SpadNextSerial.h"
 #include <stdlib.h>
 #include <string.h>
@@ -539,4 +541,3 @@ void SpadNextSerial::lightRecogToggle()   { if (!_allowSend(200)) return; _sendE
 void SpadNextSerial::lightWingToggle()    { if (!_allowSend(200)) return; _sendEvent("WING_LIGHTS_TOGGLE"); }
 void SpadNextSerial::lightLogoToggle()    { if (!_allowSend(200)) return; _sendEvent("LOGO_LIGHTS_TOGGLE"); }
 void SpadNextSerial::lightCabinToggle()   { if (!_allowSend(200)) return; _sendEvent("CABIN_LIGHTS_TOGGLE"); }
-

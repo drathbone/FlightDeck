@@ -1,3 +1,5 @@
+#include "ui_capi.h"
+#include "ui_generated_c.h"
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

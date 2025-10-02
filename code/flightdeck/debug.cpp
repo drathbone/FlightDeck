@@ -1,3 +1,5 @@
+#include "ui_capi.h"
+#include "ui_generated_c.h"
 #include "debug.h"
 #include <stdarg.h>
 

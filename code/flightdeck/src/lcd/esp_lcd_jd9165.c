@@ -6,6 +6,7 @@
 
 #include "soc/soc_caps.h"
 
+#include "ui_generated_c.h"
 #if SOC_MIPI_DSI_SUPPORTED
 #include "esp_check.h"
 #include "esp_log.h"

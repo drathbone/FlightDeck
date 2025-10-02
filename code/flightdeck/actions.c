@@ -1,9 +1,37 @@
-#include "actions.h"
-#include "ui.h"
 #include "spad_actions.h"
+#include "ui_generated_c.h"
 // actions.c
 #include "lvgl.h"
 
+// --- Universal LVGL event guard (dedupe + stop bubbling) ---
+#include "config.h"
+typedef struct {
+    lv_obj_t*       last_target;
+    lv_event_code_t last_code;
+    uint32_t        last_tick;
+} ui_guard_state_t;
+static ui_guard_state_t __ui_guard = {0};
+
+static inline bool ui_guard(lv_event_t *e) {
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t *target = lv_event_get_target(e);
+    uint32_t now = lv_tick_get();
+
+    if (target == __ui_guard.last_target &&
+        code   == __ui_guard.last_code) {
+        uint32_t dt = lv_tick_elaps(__ui_guard.last_tick);
+        if (dt < UI_DEDUP_WINDOW_MS) {
+            return false; // drop duplicate within debounce window
+        }
+    }
+    __ui_guard.last_target = target;
+    __ui_guard.last_code   = code;
+    __ui_guard.last_tick   = now;
+
+    lv_event_stop_bubbling(e); // prevent parent handlers re-firing
+    return true;
+}
+// --- End guard ---
 
 // Tunables
 #ifndef UI_DEDUP_WINDOW_MS

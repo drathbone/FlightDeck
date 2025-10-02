@@ -1,3 +1,4 @@
+#include "ui_generated_c.h"
 // spad_actions.h  (C header)
 #pragma once
 

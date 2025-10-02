@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include "ui_capi.h"
+#include "ui_generated_c.h"
 #include "FocusRouter.h"
 #include "debug.h"
 

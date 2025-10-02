@@ -1,3 +1,4 @@
+#include "ui_generated_c.h"
 #pragma once
 #include <Arduino.h>
 

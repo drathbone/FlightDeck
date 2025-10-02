@@ -1,7 +1,6 @@
+#include "ui_generated_c.h"
 #pragma once
 #include <lvgl.h>
-#include "ui.h"
-
 // Screen 1 (Radios) element IDs
 enum RadiosIds {
   RID_COM1 = 0,

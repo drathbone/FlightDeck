@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 
+#include "ui_generated_c.h"
 #if SOC_MIPI_DSI_SUPPORTED
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_mipi_dsi.h"
