@@ -14,6 +14,7 @@ typedef struct _objects_t {
     lv_obj_t *pg_sim_controls;
     lv_obj_t *pg_lights;
     lv_obj_t *pg_ground_services;
+    lv_obj_t *pg_aircraft_info;
     lv_obj_t *radios;
     lv_obj_t *obj0;
     lv_obj_t *autopilot;
@@ -22,7 +23,7 @@ typedef struct _objects_t {
     lv_obj_t *obj2;
     lv_obj_t *ground_services;
     lv_obj_t *obj3;
-    lv_obj_t *engine_management;
+    lv_obj_t *aircraft_info;
     lv_obj_t *obj4;
     lv_obj_t *lighting;
     lv_obj_t *obj5;
@@ -167,6 +168,17 @@ typedef struct _objects_t {
     lv_obj_t *lbl_gpu_status;
     lv_obj_t *lbl_gpu_status_val;
     lv_obj_t *home_4;
+    lv_obj_t *con_ground_speed_1;
+    lv_obj_t *con_parking_brake_1;
+    lv_obj_t *con_fuel_total_1;
+    lv_obj_t *btn_pushback_1;
+    lv_obj_t *btn_refuel_1;
+    lv_obj_t *btn_gpu_1;
+    lv_obj_t *btn_doors_1;
+    lv_obj_t *btn_de_ice_1;
+    lv_obj_t *btn_autostart_1;
+    lv_obj_t *con_status_bar_1;
+    lv_obj_t *home_5;
 } objects_t;
 
 extern objects_t objects;
@@ -178,6 +190,7 @@ enum ScreensEnum {
     SCREEN_ID_PG_SIM_CONTROLS = 4,
     SCREEN_ID_PG_LIGHTS = 5,
     SCREEN_ID_PG_GROUND_SERVICES = 6,
+    SCREEN_ID_PG_AIRCRAFT_INFO = 7,
 };
 
 void create_screen_pg_home();
@@ -197,6 +210,9 @@ void tick_screen_pg_lights();
 
 void create_screen_pg_ground_services();
 void tick_screen_pg_ground_services();
+
+void create_screen_pg_aircraft_info();
+void tick_screen_pg_aircraft_info();
 
 void tick_screen_by_id(enum ScreensEnum screenId);
 void tick_screen(int screen_index);

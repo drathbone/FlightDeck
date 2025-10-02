@@ -168,9 +168,9 @@ void create_screen_pg_home() {
             }
         }
         {
-            // Engine Management
+            // Aircraft Info
             lv_obj_t *obj = lv_obj_create(parent_obj);
-            objects.engine_management = obj;
+            objects.aircraft_info = obj;
             lv_obj_set_pos(obj, 400, 320);
             lv_obj_set_size(obj, 200, 120);
             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -179,7 +179,7 @@ void create_screen_pg_home() {
             lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_border_width(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_obj_add_event_cb(obj, action_e_engine, LV_EVENT_CLICKED, (void *)0);
+            lv_obj_add_event_cb(obj, action_e_aircraft, LV_EVENT_CLICKED, (void *)0);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_outline_width(obj, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_outline_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -190,16 +190,16 @@ void create_screen_pg_home() {
                     lv_obj_t *obj = lv_img_create(parent_obj);
                     lv_obj_set_pos(obj, 77, 20);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-                    lv_img_set_src(obj, &img_engine_fan_48px);
+                    lv_img_set_src(obj, &img_aircraft_cyan);
                 }
                 {
                     lv_obj_t *obj = lv_label_create(parent_obj);
                     objects.obj4 = obj;
-                    lv_obj_set_pos(obj, 38, 80);
+                    lv_obj_set_pos(obj, 47, 80);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_text_color(obj, lv_color_hex(0xffe5e7eb), LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_text_font(obj, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
-                    lv_label_set_text(obj, "Engine Mgmt");
+                    lv_label_set_text(obj, "Aircraft Info");
                 }
             }
         }
@@ -2544,6 +2544,215 @@ void tick_screen_pg_ground_services() {
     }
 }
 
+void create_screen_pg_aircraft_info() {
+    lv_obj_t *obj = lv_obj_create(0);
+    objects.pg_aircraft_info = obj;
+    lv_obj_set_pos(obj, 0, 0);
+    lv_obj_set_size(obj, 1024, 600);
+    lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0b1220), LV_PART_MAIN | LV_STATE_DEFAULT);
+    {
+        lv_obj_t *parent_obj = obj;
+        {
+            // conGroundSpeed_1
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.con_ground_speed_1 = obj;
+            lv_obj_set_pos(obj, 100, 120);
+            lv_obj_set_size(obj, 240, 100);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // conParkingBrake_1
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.con_parking_brake_1 = obj;
+            lv_obj_set_pos(obj, 380, 120);
+            lv_obj_set_size(obj, 240, 100);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // conFuelTotal_1
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.con_fuel_total_1 = obj;
+            lv_obj_set_pos(obj, 660, 120);
+            lv_obj_set_size(obj, 240, 100);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // btnPushback_1
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.btn_pushback_1 = obj;
+            lv_obj_set_pos(obj, 100, 260);
+            lv_obj_set_size(obj, 80, 80);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_add_event_cb(obj, action_btn_pushback, LV_EVENT_CLICKED, (void *)0);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // btnRefuel_1
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.btn_refuel_1 = obj;
+            lv_obj_set_pos(obj, 244, 260);
+            lv_obj_set_size(obj, 80, 80);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_add_event_cb(obj, action_btn_refuel, LV_EVENT_CLICKED, (void *)0);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // btnGPU_1
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.btn_gpu_1 = obj;
+            lv_obj_set_pos(obj, 388, 260);
+            lv_obj_set_size(obj, 80, 80);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_add_event_cb(obj, action_btn_gpu, LV_EVENT_CLICKED, (void *)0);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // btnDoors_1
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.btn_doors_1 = obj;
+            lv_obj_set_pos(obj, 532, 260);
+            lv_obj_set_size(obj, 80, 80);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_add_event_cb(obj, action_btn_doors, LV_EVENT_CLICKED, (void *)0);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // btnDeIce_1
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.btn_de_ice_1 = obj;
+            lv_obj_set_pos(obj, 676, 260);
+            lv_obj_set_size(obj, 80, 80);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_add_event_cb(obj, action_btn_deice, LV_EVENT_CLICKED, (void *)0);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // btnAutostart_1
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.btn_autostart_1 = obj;
+            lv_obj_set_pos(obj, 820, 260);
+            lv_obj_set_size(obj, 80, 80);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_add_event_cb(obj, action_btn_autostart, LV_EVENT_CLICKED, (void *)0);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // conStatusBar_1
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.con_status_bar_1 = obj;
+            lv_obj_set_pos(obj, 100, 420);
+            lv_obj_set_size(obj, 800, 60);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        {
+            // Home_5
+            lv_obj_t *obj = lv_obj_create(parent_obj);
+            objects.home_5 = obj;
+            lv_obj_set_pos(obj, 460, 492);
+            lv_obj_set_size(obj, 80, 80);
+            lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_add_event_cb(obj, action_e_home, LV_EVENT_CLICKED, (void *)0);
+            lv_obj_set_style_border_color(obj, lv_color_hex(0xff22d3ee), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(obj, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(obj, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_color(obj, lv_color_hex(0xff0f172a), LV_PART_MAIN | LV_STATE_DEFAULT);
+            {
+                lv_obj_t *parent_obj = obj;
+                {
+                    lv_obj_t *obj = lv_img_create(parent_obj);
+                    lv_obj_set_pos(obj, 0, 0);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_img_set_src(obj, &img_home);
+                    lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+                }
+            }
+        }
+    }
+    
+    tick_screen_pg_aircraft_info();
+}
+
+void tick_screen_pg_aircraft_info() {
+}
+
 
 
 typedef void (*tick_screen_func_t)();
@@ -2554,6 +2763,7 @@ tick_screen_func_t tick_screen_funcs[] = {
     tick_screen_pg_sim_controls,
     tick_screen_pg_lights,
     tick_screen_pg_ground_services,
+    tick_screen_pg_aircraft_info,
 };
 void tick_screen(int screen_index) {
     tick_screen_funcs[screen_index]();
@@ -2573,4 +2783,5 @@ void create_screens() {
     create_screen_pg_sim_controls();
     create_screen_pg_lights();
     create_screen_pg_ground_services();
+    create_screen_pg_aircraft_info();
 }

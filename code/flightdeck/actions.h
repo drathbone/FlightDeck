@@ -48,6 +48,7 @@ extern void action_btn_gpu(lv_event_t * e);
 extern void action_btn_doors(lv_event_t * e);
 extern void action_btn_deice(lv_event_t * e);
 extern void action_btn_autostart(lv_event_t * e);
+extern void action_e_aircraft(lv_event_t * e);
 
 
 #ifdef __cplusplus

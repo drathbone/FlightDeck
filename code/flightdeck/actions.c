@@ -76,6 +76,11 @@ void action_e_lighting(lv_event_t * e) {
   if (!ui_event_guard(e)) return;
   loadScreen(SCREEN_ID_PG_LIGHTS);
 }
+void action_e_aircraft(lv_event_t * e) {
+  if (!ui_event_guard(e)) return;
+  loadScreen(SCREEN_ID_PG_AIRCRAFT_INFO);
+}
+
 
 // Functions for AP buttons
 void action_ap_pressed (lv_event_t * e) { if (!ui_event_guard(e)) return; spad_action_ap_toggle(e); }

@@ -1,6 +1,6 @@
 #include "images.h"
 
-const ext_img_desc_t images[21] = {
+const ext_img_desc_t images[22] = {
     { "autopilot_tile_48px", &img_autopilot_tile_48px },
     { "engine_fan_48px", &img_engine_fan_48px },
     { "ground_tile_48px", &img_ground_tile_48px },
@@ -22,4 +22,5 @@ const ext_img_desc_t images[21] = {
     { "sim_rate_down_cyan", &img_sim_rate_down_cyan },
     { "sim_rate_up_cyan", &img_sim_rate_up_cyan },
     { "sim_rate_reset_cyan", &img_sim_rate_reset_cyan },
+    { "aircraft_cyan", &img_aircraft_cyan },
 };
