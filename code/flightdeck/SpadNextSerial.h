@@ -239,6 +239,15 @@ private:
   // emit change callback if value changed beyond tolerance
   bool _emitIfChanged(DataId id, float& storage, float newVal, float tol = 0.0005f);
 
+  // Throttled emitter: clamp->quantize->deadband->min-period->emit
+  bool _emitIfChangedThrottled(DataId id,
+                              float& lastRef,
+                              float val,
+                              float epsilon,
+                              uint16_t minPeriodMs,
+                              float quantStep = 0.0f,
+                              float zeroClamp = 0.0f);
+
   Stream& _io;
   uint32_t _baud;
   const char* _vendor;

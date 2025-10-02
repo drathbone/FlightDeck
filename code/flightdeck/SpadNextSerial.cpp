@@ -5,6 +5,50 @@
 #include <string.h>
 #include <math.h>
 #include "debug.h"
+#include <math.h>  // fabsf, roundf
+
+// Adjust to cover your highest DataId value (401 fits easily)
+static const uint16_t DID_TRACK_CAP = 1024;
+static uint32_t s_lastEmitMs[DID_TRACK_CAP] = {0};
+
+bool SpadNextSerial::_emitIfChangedThrottled(DataId id,
+                                             float& lastRef,
+                                             float val,
+                                             float epsilon,
+                                             uint16_t minPeriodMs,
+                                             float quantStep,
+                                             float zeroClamp)
+{
+    // 0) Optional "stopped" clamp (e.g., <0.25 m/s = 0)
+    if (zeroClamp > 0.0f && fabsf(val) < zeroClamp) {
+        val = 0.0f;
+    }
+
+    // 1) Optional quantization (e.g., 0.1 steps)
+    if (quantStep > 0.0f) {
+        val = roundf(val / quantStep) * quantStep;
+    }
+
+    // 2) Deadband vs lastRef
+    if (fabsf(val - lastRef) < epsilon) {
+        return false;
+    }
+
+    // 3) Per-DID rate limit
+    const uint32_t now = millis();
+    unsigned idx = static_cast<unsigned>(id);
+    if (idx >= DID_TRACK_CAP) idx = 0;     // safety bucket
+    uint32_t& lastMs = s_lastEmitMs[idx];
+    if (now - lastMs < minPeriodMs) {
+        return false;
+    }
+    lastMs = now;
+
+    // 4) Reuse existing emitter to store & forward (epsilon already applied)
+    return _emitIfChanged(id, lastRef, val, 0.0f);
+}
+
+
 
 // ---------------- ctor / begin ----------------
 SpadNextSerial::SpadNextSerial(Stream& io, uint32_t baud)
@@ -180,7 +224,13 @@ void SpadNextSerial::_processMessage(char* msg) {
       case DID_LIGHT_CABIN:   _emitIfChanged(DID_LIGHT_CABIN,   _lightCabin,   val, 0.5f); break;
 
       // Ground controls
-      case DID_GROUNDSPEED:      _emitIfChanged(DID_GROUNDSPEED,      _groundSpeed_mps, val, -999.0f); break;
+      //case DID_GROUNDSPEED:      _emitIfChanged(DID_GROUNDSPEED,      _groundSpeed_mps, val, -999.0f); break;
+      case DID_GROUNDSPEED: {
+          // epsilon=0.1 m/s, minPeriod=200 ms, quant=0.1 m/s, clamp <0.25 m/s to 0
+          _emitIfChangedThrottled(DID_GROUNDSPEED, _groundSpeed_mps, val,
+                                  0.1f, 200, 0.1f, 0.25f);
+          break;
+      }
       case DID_PARK_BRAKE:       _emitIfChanged(DID_PARK_BRAKE,       _parkBrake_pos,   val, -1.0f);   break;
       case DID_FUEL_TOTAL_LBS:   _emitIfChanged(DID_FUEL_TOTAL_LBS,   _fuelTotal_lbs,   val, -1.0f);   break;
       case DID_BATT_VOLTAGE:     _emitIfChanged(DID_BATT_VOLTAGE,     _battVoltage_v,   val, -1.0f);   break;

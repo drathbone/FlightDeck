@@ -636,6 +636,7 @@ void onSpadChange(SpadNextSerial::DataId id, float v) {
     }
     
     case SpadNextSerial::DID_ACTIVE_PAUSE:
+      DBG.printf("DBG: Active Pause event - val=%d", v);
       ui_set_state(objects.active_pause, objects.obj38, (v>=0.5f)?ui_state_t::Active:ui_state_t::Off);
       break;
 
