@@ -2,9 +2,13 @@
 #include "ui_generated_c.h"
 // actions.c
 #include "lvgl.h"
+#include <stdbool.h>
 
 // --- Universal LVGL event guard (dedupe + stop bubbling) ---
 #include "config.h"
+
+extern void spad_force_rescan_caps(void);
+
 typedef struct {
     lv_obj_t*       last_target;
     lv_event_code_t last_code;
@@ -37,6 +41,10 @@ static inline bool ui_guard(lv_event_t *e) {
 #ifndef UI_DEDUP_WINDOW_MS
 #define UI_DEDUP_WINDOW_MS 180   // ignore repeats within this window per target
 #endif
+
+// Define colours for changing YES/NO highlights for aircraft capabilities
+#define CAP_COL_YES lv_color_hex(0x22D3EE)  // cyan (highlight)
+#define CAP_COL_NO  lv_color_hex(0x0F172A)  // slate (dim)
 
 // Global deduper state (per-target)
 typedef struct {
@@ -75,6 +83,39 @@ static inline bool ui_event_guard(lv_event_t* e) {
     return true;
 }
 
+static inline void _cap_label_toggle(lv_obj_t* yes, lv_obj_t* no, bool has) {
+    lv_color_t colYes = has ? CAP_COL_YES : CAP_COL_NO;
+    lv_color_t colNo  = has ? CAP_COL_NO  : CAP_COL_YES;
+
+    lv_obj_set_style_outline_color(yes, colYes, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_outline_color(no,  colNo,  LV_PART_MAIN | LV_STATE_DEFAULT);
+    // If outline width isn’t set in EEZ, uncomment:
+    // lv_obj_set_style_outline_width(yes, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // lv_obj_set_style_outline_width(no,  2, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_invalidate(yes);
+    lv_obj_invalidate(no);
+}
+
+// ---- C-callable bridges (called from C++)
+void ui_set_capability_pushback(int has) {
+    _cap_label_toggle(objects.lbl_cap_pushback_yes, objects.lbl_cap_pushback_no, has != 0);
+}
+void ui_set_capability_gpu(int has) {
+    _cap_label_toggle(objects.lbl_cap_gpu_yes, objects.lbl_cap_gpu_no, has != 0);
+}
+void ui_set_capability_ground_deice(int has) {
+    _cap_label_toggle(objects.lbl_cap_deice_yes, objects.lbl_cap_deice_no, has != 0);
+}
+void ui_set_capability_antiice(int has) {
+    _cap_label_toggle(objects.lbl_cap_antiice_yes, objects.lbl_cap_antiice_no, has != 0);
+}
+void ui_set_capability_autostart(int has) {
+    _cap_label_toggle(objects.lbl_cap_autostart_yes, objects.lbl_cap_autostart_no, has != 0);
+}
+void ui_set_capability_exits(int has) {
+    _cap_label_toggle(objects.lbl_cap_exits_yes, objects.lbl_cap_exits_no, has != 0);
+}
 
 // Functions for Home Page buttons
 void action_e_home(lv_event_t * e) {
@@ -156,6 +197,13 @@ void action_btn_deice(lv_event_t * e) {}
 void action_btn_autostart(lv_event_t * e) {}
 
 // Aircraft Info page buttons
-void action_btn_rescan_pressed(lv_event_t * e) {}
+void action_btn_rescan_pressed(lv_event_t * e) {
+    (void)e;
+    spad_force_rescan_caps();
+    // (Optional UX) briefly disable the button or show a toast/spinner if you like
+    // lv_obj_add_state(objects.btn_cap_rescan, LV_STATE_DISABLED);
+    // ...re-enable later once you see fresh values in your DBG or after a short timer.
+
+}
 void action_btn_copy_debug_pressed(lv_event_t * e) {}
 void action_btn_engine_mgmt_pressed(lv_event_t * e) {}

@@ -6,6 +6,393 @@
 #include <math.h>
 #include "debug.h"
 #include <math.h>  // fabsf, roundf
+#include "ui_helpers.h"      // declares ui_set_state(...) and ui_state_t
+
+
+extern "C" {
+  void set_var_v_ac_title(const char* s);
+  void set_var_v_atc_model(const char* s);
+  void set_var_v_icao_type(const char* s);
+  void set_var_v_profile_name(const char* s);
+  void ui_set_capability_pushback(int has);
+  void ui_set_capability_gpu(int has);
+  void ui_set_capability_ground_deice(int has);
+  void ui_set_capability_antiice(int has);
+  void ui_set_capability_autostart(int has);
+  void ui_set_capability_exits(int has);
+}
+
+// ---- Ground Services (Autostart) widget object aliases ----
+#define GS_AUTOSTART_CNT  objects.btn_autostart
+#define GS_AUTOSTART_LBL  objects.lbl_autostart
+// ---- Ground Services (Pushback) widget object aliases ----
+#define GS_PUSHBACK_CNT  objects.btn_pushback
+#define GS_PUSHBACK_LBL  objects.lbl_pushback
+// ---- Ground Services (GPU) widget object aliases ----
+#define GS_GPU_CNT  objects.btn_gpu
+#define GS_GPU_LBL  objects.lbl_gpu
+
+// Strip known provider prefixes and grab the "payload" token(s).
+// Examples:
+//   "ATC.COM.AC_MODEL C172.0"   -> "C172"
+//   "ATC.COM.AC_TYPE Boeing 737-800" -> "Boeing 737-800"
+//   "C172" -> "C172"
+static const char* _first_space(const char* s) { while (*s && *s!=' ') ++s; return s; }
+
+// Safe 24-char UI write with ellipsis if needed ("…")
+static void _fit24(const char* in, char* out24 /*size 24*/) {
+  const size_t MAX = 23; // leave 1 for '\0'
+  size_t n = strlen(in);
+  if (n <= MAX) { strcpy(out24, in); return; }
+  // 21 chars + ellipsis
+  strncpy(out24, in, 21);
+  out24[21] = '\0';
+  strcat(out24, "…");
+}
+
+// Fit to outsz-1 chars; add "…" if truncated and outsz >= 3
+static void _fitN(const char* in, char* out, size_t outsz) {
+  if (!out || outsz == 0) return;
+  if (!in) in = "";
+  size_t max = (outsz > 0 ? outsz - 1 : 0);
+  size_t n = strlen(in);
+  if (n <= max) { strncpy(out, in, outsz-1); out[outsz-1] = '\0'; return; }
+  if (outsz >= 3) {
+    size_t keep = (outsz - 1) - 1; // leave 1 for ellipsis
+    strncpy(out, in, keep);
+    out[keep] = '\0';
+    strcat(out, "…");
+  } else { // degenerate, but be safe
+    out[0] = '\0';
+  }
+}
+
+void SpadNextSerial::_logAircraftIdentity() {
+  uint32_t now = millis();
+  if (now - _lastIdLogMs < 200) return;  // simple spam guard
+  _lastIdLogMs = now;
+
+  DBG.print("[AC] TITLE  ui='"); DBG.print(_acTitle);
+  DBG.print("' raw='");           DBG.print(_rawAcTitle);  DBG.println("'");
+
+  DBG.print("[AC] MODEL  ui='"); DBG.print(_atcModel);
+  DBG.print("' raw='");           DBG.print(_rawAtcModel);  DBG.println("'");
+
+  DBG.print("[AC] ICAO   ui='"); DBG.print(_icaoType);
+  DBG.print("' raw='");           DBG.print(_rawIcaoType);  DBG.println("'");
+}
+
+void SpadNextSerial::_maybeSynthesizeTitle() {
+  if (_acTitle[0] && strcmp(_acTitle, "—") != 0) return;
+  // Use ATC model + ICAO if available
+  char composed[96] = {0};
+  if (_atcModel[0] && strcmp(_atcModel, "—") != 0) {
+    strncpy(composed, _atcModel, sizeof(composed)-1);
+  }
+  if (_icaoType[0] && strcmp(_icaoType, "—") != 0) {
+    if (composed[0]) strncat(composed, " (", sizeof(composed)-strlen(composed)-1);
+    else strncat(composed, "(", sizeof(composed)-1);
+    strncat(composed, _icaoType, sizeof(composed)-strlen(composed)-1);
+    strncat(composed, ")", sizeof(composed)-strlen(composed)-1);
+  }
+  if (composed[0]) {
+    // Fit to UI's 24 chars for the setter, but keep cache long
+    char fit[24]; _fit24(composed, fit);
+    _updateStrIfChanged(_acTitle, sizeof(_acTitle), fit, set_var_v_ac_title);
+  }
+}
+
+static void _normalizeProfileName(const char* in, char* out, size_t outsz) {
+  if (!out || outsz==0) return;
+  out[0] = '\0';
+  const char* p = in ? in : "";
+
+  // Copy to temp we can mutate
+  char buf[128];
+  strncpy(buf, p, sizeof(buf)-1); buf[sizeof(buf)-1] = '\0';
+
+  // Drop obvious localization/prefix noise if present
+  const char* prefixes[] = { "PROFILE_", "SPAD_PROFILE_", "AIRCRAFT_ATC_NAME_", "AIRCRAFT_ATC_MODEL_" };
+  for (size_t i=0;i<sizeof(prefixes)/sizeof(prefixes[0]);++i) {
+    size_t L = strlen(prefixes[i]);
+    if (strncmp(buf, prefixes[i], L) == 0) { memmove(buf, buf+L, strlen(buf+L)+1); break; }
+  }
+
+  // Replace underscores with spaces, collapse whitespace
+  for (char* q=buf; *q; ++q) if (*q=='_') *q=' ';
+  char* s = buf; while (*s==' '||*s=='\t'||*s=='\r'||*s=='\n') ++s;
+  char* w = s; bool insp = false;
+  for (char* r=s; *r; ++r) {
+    if (*r==' '||*r=='\t'||*r=='\r'||*r=='\n') { if (!insp) { *w++=' '; insp=true; } }
+    else { *w++=*r; insp=false; }
+  }
+  while (w>s && *(w-1)==' ') --w; *w='\0';
+
+  if (*s=='\0') { strncpy(out, "—", outsz); out[outsz-1]='\0'; return; }
+  strncpy(out, s, outsz-1); out[outsz-1]='\0';
+}
+
+static void _normalizeIcaoDesignator(const char* in, char* out, size_t outsz) {
+  // Expect ICAO like "B738", "C172". Remove prefixes & trailing numeric noise.
+  const char* p = in ? in : "";
+  // Drop "ATC." or "ATC.COM." lead-ins if present.
+  const char* space = _first_space(p);
+  if (*space == ' ') {
+    // After first space is usually the actual value (e.g. "C172.0")
+    p = space + 1;
+  }
+  // Copy alnum-only prefix (stop at first non-alnum)
+  size_t i = 0;
+  while (p[i] && ((p[i]>='0'&&p[i]<='9')||(p[i]>='A'&&p[i]<='Z')||(p[i]>='a'&&p[i]<='z'))) {
+    if (i+1 < outsz) out[i] = p[i];
+    ++i;
+  }
+  if (i == 0) { strncpy(out, "—", outsz); out[outsz-1]='\0'; return; }
+  // Uppercase and terminate
+  size_t n = (i < outsz-1) ? i : outsz-1;
+  for (size_t k=0; k<n; ++k) out[k] = (out[k]>='a'&&out[k]<='z') ? (out[k]-32) : out[k];
+  out[n] = '\0';
+}
+
+static void _normalizeModelFull(const char* in, char* out, size_t outsz) {
+  // Model text (human readable). Drop provider prelude like "ATC.COM.AC_TYPE ".
+  const char* p = in ? in : "";
+  const char* space = _first_space(p);
+  if (*space == ' ') p = space + 1; // keep the human-readable part
+  // Trim leading/trailing whitespace
+  while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
+  size_t len = strnlen(p, outsz-1);
+  // Right-trim
+  while (len && (p[len-1]==' '||p[len-1]=='\t'||p[len-1]=='\r'||p[len-1]=='\n')) --len;
+  // Copy and ensure at least "—"
+  if (len == 0) { strncpy(out, "—", outsz); out[outsz-1]='\0'; return; }
+  memcpy(out, p, len);
+  out[len] = '\0';
+}
+
+void SpadNextSerial::_setLiveCap(uint32_t bit, bool on) {
+  uint32_t prev = _capLiveMask;
+  if (on)  _capLiveMask |= bit;
+  else     _capLiveMask &= ~bit;
+  if (prev != _capLiveMask) _refreshCapabilitiesUI();
+}
+
+void SpadNextSerial::_refreshCapabilitiesUI() {
+  uint32_t combined = _capRulesMask | _capLiveMask;
+  if (combined != _capMask) {
+    DBG.print("[CAP] final "); DBG.print(_capMask, HEX);
+    DBG.print(" -> "); DBG.println(combined, HEX);
+    _capMask = combined;
+    _emitCapabilitiesToUI();
+
+    // Keep GS Autostart widget synced with current caps
+    _updateAutostartWidget();
+    _updatePushbackWidget();
+    _updateGpuWidget();
+
+  } else {
+    DBG.println("[CAP] final mask unchanged");
+  }
+}
+
+void SpadNextSerial::_onExitPresence(uint8_t idx) {
+  if (idx >= 1 && idx <= 12) _exitSeenMask |= (1u << idx);
+  // any extra exit index (>=1) seen => multiple exits
+  bool multiple = (_exitSeenMask & 0x1FFE) != 0; // bits 1..12
+  _setLiveCap(CAP_MULTIPLE_EXITS, multiple);
+}
+
+void SpadNextSerial::_updateLiveGpu() {
+  _setLiveCap(CAP_GPU, (_gpu1 || _gpu2));
+}
+
+void SpadNextSerial::_onExitTypeUpdate(uint8_t idx, int typ) {
+  if (idx >= 1 && idx <= 7) _exitSeenMask |= (1u << idx);
+  // Treat ANY reported exit at index >=1 as evidence of multiple exits.
+  // (Some add-ons label extra doors as "Main" => typ==0. We still consider them.)
+  bool multiple = (_exitSeenMask & 0xFE) != 0; // any of bits 1..7 set
+  _setLiveCap(CAP_MULTIPLE_EXITS, multiple);
+}
+
+// ---- ATC Model normalizer (handles "AIRCRAFT_ATC_NAME_", ".0.TEXT", underscores, etc.)
+static void _normalizeAtcModel(const char* in, char* out, size_t outsz) {
+  if (!out || outsz == 0) return;
+  out[0] = '\0';
+  if (!in) in = "";
+
+  // 1) If there's a provider prelude like "ATC.COM.AC_TYPE ...", skip to after first space
+  const char* p = in;
+  const char* sp = p;
+  while (*sp && *sp != ' ') ++sp;
+  if (*sp == ' ') p = sp + 1;
+
+  // Copy into a temp buffer we can mutate
+  char buf[128];
+  strncpy(buf, p, sizeof(buf) - 1);
+  buf[sizeof(buf) - 1] = '\0';
+
+  // 2) Strip known localization prefixes (at start, no spaces)
+  const char* prefixes[] = {
+    "AIRCRAFT_ATC_NAME_",
+    "AIRCRAFT_ATC_MODEL_",
+    "ATC_NAME_",
+    "ATC_MODEL_"
+  };
+  for (size_t i = 0; i < sizeof(prefixes)/sizeof(prefixes[0]); ++i) {
+    size_t L = strlen(prefixes[i]);
+    if (strncmp(buf, prefixes[i], L) == 0) {
+      memmove(buf, buf + L, strlen(buf + L) + 1);
+      break;
+    }
+  }
+
+  // 3) If there are suffix markers like ".0.TEXT" / ".TEXT" / ".STRING" etc, truncate at the first '.'
+  for (char* q = buf; *q; ++q) {
+    if (*q == '.') { *q = '\0'; break; }
+  }
+
+  // 4) Replace underscores with spaces
+  for (char* q = buf; *q; ++q) {
+    if (*q == '_') *q = ' ';
+  }
+
+  // 5) Trim and collapse multiple spaces
+  // left trim
+  char* s = buf;
+  while (*s == ' ' || *s == '\t' || *s == '\r' || *s == '\n') ++s;
+  // in-place collapse
+  char* w = s;
+  bool inspace = false;
+  for (char* r = s; *r; ++r) {
+    if (*r == ' ' || *r == '\t' || *r == '\r' || *r == '\n') {
+      if (!inspace) { *w++ = ' '; inspace = true; }
+    } else {
+      *w++ = *r; inspace = false;
+    }
+  }
+  // right trim
+  while (w > s && (*(w-1) == ' ')) --w;
+  *w = '\0';
+
+  if (*s == '\0') { strncpy(out, "—", outsz); out[outsz-1] = '\0'; return; }
+  strncpy(out, s, outsz - 1);
+  out[outsz - 1] = '\0';
+}
+
+
+static const char* _istrstr(const char* hay, const char* needle) {
+  if (!hay || !needle || !*needle) return nullptr;
+  for (const char* p = hay; *p; ++p) {
+    const char* a = p; const char* b = needle;
+    while (*a && *b) {
+      char ca = (*a>='A'&&*a<='Z') ? (*a+32) : *a;
+      char cb = (*b>='A'&&*b<='Z') ? (*b+32) : *b;
+      if (ca != cb) break; ++a; ++b;
+    }
+    if (!*b) return p;
+  }
+  return nullptr;
+}
+
+void SpadNextSerial::_emitCapabilitiesToUI() {
+  ui_set_capability_pushback(   (_capMask & CAP_PUSHBACK)        ? 1 : 0 );
+  ui_set_capability_gpu(        (_capMask & CAP_GPU)             ? 1 : 0 );
+  ui_set_capability_ground_deice((_capMask & CAP_GROUND_DEICE)   ? 1 : 0 );
+  ui_set_capability_antiice(    (_capMask & CAP_ANTIICE)         ? 1 : 0 );
+  ui_set_capability_autostart(  (_capMask & CAP_AUTOSTART)       ? 1 : 0 );
+  ui_set_capability_exits(      (_capMask & CAP_MULTIPLE_EXITS)  ? 1 : 0 );
+
+  DBG.print("[CAP] mask="); DBG.println(_capMask, HEX);
+}
+
+void SpadNextSerial::_recomputeCapabilities() {
+  // --- Simple rule table (substring matches on identity/profile)
+  struct CapRule { const char* pat; uint32_t setMask; uint32_t clearMask; };
+  static const CapRule kCapRules[] = {
+    // Airliners / regional jets — assume all ground services & multiple exits
+    {"A320", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"A321", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"A319", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"B737", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"B738", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"B739", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"B747", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"B787", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"CRJ",  CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"E170", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"E175", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+    {"E190", CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_ANTIICE|CAP_AUTOSTART|CAP_MULTIPLE_EXITS, 0},
+
+    // Bizjets / turboprops — typically anti-ice & (often) autostart
+    {"CJ4",      CAP_ANTIICE|CAP_AUTOSTART, 0},
+    {"TBM",      CAP_ANTIICE|CAP_AUTOSTART, 0},
+    {"KING AIR", CAP_ANTIICE|CAP_AUTOSTART, 0},
+    {"B350",     CAP_ANTIICE|CAP_AUTOSTART, 0},
+    {"BE20",     CAP_ANTIICE|CAP_AUTOSTART, 0},
+
+    // GA singles — explicitly clear ground services & multiple exits
+    {"C172", 0, CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_MULTIPLE_EXITS},
+    {"C152", 0, CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_MULTIPLE_EXITS},
+    {"PA28", 0, CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_MULTIPLE_EXITS},
+    {"DA40", 0, CAP_PUSHBACK|CAP_GPU|CAP_GROUND_DEICE|CAP_MULTIPLE_EXITS},
+  };
+
+  // Case-insensitive substring
+  auto hasSub = [](const char* s, const char* pat) -> bool {
+    if (!s || !pat || !*pat) return false;
+    for (const char* p = s; *p; ++p) {
+      const char* a = p; const char* b = pat;
+      while (*a && *b) {
+        char ca = (*a>='A'&&*a<='Z') ? (*a+32) : *a;
+        char cb = (*b>='A'&&*b<='Z') ? (*b+32) : *b;
+        if (ca != cb) break;
+        ++a; ++b;
+      }
+      if (!*b) return true;
+    }
+    return false;
+  };
+
+  // Sources we match against
+  const char* title = _rawAcTitle;      // full raw Title
+  const char* model = _rawAtcModel;     // full raw ATC model (pre-normalized/raw)
+  const char* prof  = _rawProfileName;  // SPAD profile name (raw)
+  const char* icao  = _icaoType;        // cleaned ICAO (short code)
+
+  // Build rules mask
+  uint32_t m = 0;
+
+  DBG.print("[CAP] recompute for TITLE='"); DBG.print(title);
+  DBG.print("' MODEL='"); DBG.print(model);
+  DBG.print("' ICAO='");  DBG.print(icao);
+  DBG.print("' PROFILE='"); DBG.print(prof); DBG.println("'");
+
+  for (size_t i = 0; i < sizeof(kCapRules)/sizeof(kCapRules[0]); ++i) {
+    const char* pat = kCapRules[i].pat;
+    const bool match =
+      hasSub(title, pat) ||
+      hasSub(model, pat) ||
+      hasSub(prof,  pat) ||
+      hasSub(icao,  pat);
+
+    if (match) {
+      DBG.print("[CAP] matched '"); DBG.print(pat); DBG.println("'");
+      m |=  kCapRules[i].setMask;
+      m &= ~kCapRules[i].clearMask;
+    }
+  }
+
+  if (m != _capRulesMask) {
+    DBG.print("[CAP] rules "); DBG.print(_capRulesMask, HEX);
+    DBG.print(" -> "); DBG.println(m, HEX);
+    _capRulesMask = m;
+    _refreshCapabilitiesUI();   // combine rules+live and emit to LVGL if changed
+  } else {
+    DBG.println("[CAP] rules mask unchanged");
+  }
+}
+
+
 
 // Adjust to cover your highest DataId value (401 fits easily)
 static const uint16_t DID_TRACK_CAP = 1024;
@@ -187,6 +574,88 @@ void SpadNextSerial::_processMessage(char* msg) {
     return;
   }
 
+  // 0,AIRCRAFTCHANGED
+  if (chan == 0 && t >= 2 && strncmp(tok[1], "AIRCRAFTCHANGED", 15) == 0) {
+    DBG.println("[HANDSHAKE] START (implied by AIRCRAFTCHANGED)");
+
+    // Optional debounce (e.g., 300 ms)
+    uint32_t now = millis();
+    if (now - _lastAcChangeMs < 300) {
+      DBG.println("[INFO] AIRCRAFTCHANGED debounced");
+      return;
+    }
+    _lastAcChangeMs = now;
+
+    // Clear cached identity (UI-facing) + placeholders
+    _acTitle[0] = _atcModel[0] = _icaoType[0] = _profileName[0] = '\0';
+    set_var_v_ac_title("—");
+    set_var_v_atc_model("—");
+    set_var_v_icao_type("—");
+    set_var_v_profile_name("—");
+
+    // Clear RAW identity caches too (so rules don’t see old strings)
+    _rawAcTitle[0]  = '\0';
+    _rawAtcModel[0] = '\0';
+    _rawIcaoType[0] = '\0';
+    _rawProfileName[0] = '\0';
+
+    _engCombMask = 0;
+    _enginesRunning = false;
+    _updateAutostartWidget();   // reflect disabled state immediately
+    _updatePushbackWidget();
+    _updateGpuWidget();
+
+    // Baseline capabilities (all NO) until new data arrives
+    _exitSeenMask = 0;
+    _gpu1 = _gpu2 = false;
+    _capRulesMask = 0;
+    _capLiveMask  = 0;
+    _refreshCapabilitiesUI();   // will flip YES/NO outlines to NO
+
+    // Safety: stop any lingering SCANSTATE re-ACK attempts (mirrors START)
+    _scanAckMs = 0;
+
+    // Re-run the same subscription plan as START
+    _scheduleSubscribeBurst();
+
+    // Don't touch _started; this is a mid-session re-subscribe
+    return;
+  }
+
+
+  // 2,PROFILECHANGING,<new profile name>
+  if (chan == 2 && t >= 3 && strncmp(tok[1], "PROFILECHANGING", 15) == 0) {
+    // Brief user feedback while SPAD switches profiles
+    set_var_v_profile_name("Switching…");   // fits 17 bytes
+    return;
+  }
+
+  // 2,PROFILECHANGED,<new profile name>
+  if (chan == 2 && t >= 3 && strncmp(tok[1], "PROFILECHANGED", 14) == 0) {
+    const char* raw = tok[2];
+
+    // Preserve raw for future lookups
+    strncpy(_rawProfileName, raw ? raw : "", sizeof(_rawProfileName)-1);
+    _rawProfileName[sizeof(_rawProfileName)-1] = '\0';
+
+    // Clean + fit to UI buffer (17 total = 16 visible chars)
+    char cleaned[64];
+    _normalizeProfileName(_rawProfileName, cleaned, sizeof(cleaned));
+
+    char fit[17];
+    _fitN(cleaned, fit, sizeof(fit));
+
+    _updateStrIfChanged(_profileName, sizeof(_profileName), fit, set_var_v_profile_name);
+
+    _recomputeCapabilities();
+
+    // Optional debug
+    DBG.print("[PROFILE] ui='");  DBG.print(_profileName);
+    DBG.print("' raw='");         DBG.print(_rawProfileName); DBG.println("'");
+
+    return;
+  }
+
   // 0,CONFIG[,...]  -> must ACK with 0,CONFIG; then we may subscribe
   if (chan == 0 && t >= 2 && strncmp(tok[1], "CONFIG", 6) == 0) {
     _handleConfig();
@@ -199,6 +668,11 @@ void SpadNextSerial::_processMessage(char* msg) {
       DBG.println("[HANDSHAKE] START received");
       _started = true;
       _scheduleSubscribeBurst();
+      set_var_v_profile_name("—");
+      _profileName[0] = '\0';
+
+      _capMask = 0;
+      _emitCapabilitiesToUI();
     } else {
       DBG.println("[HANDSHAKE] START (duplicate) ignored");
     }
@@ -356,6 +830,115 @@ void SpadNextSerial::_processMessage(char* msg) {
       case DID_OAT_C:            _emitIfChanged(DID_OAT_C,            _oat_c,           val, -999.0f); break;
       case DID_GPU_ON:           _emitIfChanged(DID_GPU_ON,           _gpu_on,          val, -1.0f);   break;
 
+      // Aircraft Info
+      case DID_AC_TITLE: {
+        const char* s = (t >= 3 ? tok[2] : "");
+        // save raw (full, no fitting)
+        strncpy(_rawAcTitle, s ? s : "", sizeof(_rawAcTitle)-1);
+        _rawAcTitle[sizeof(_rawAcTitle)-1] = '\0';
+
+        // clean/trim + fit to 24 for UI
+        char buf[128];
+        strncpy(buf, _rawAcTitle, sizeof(buf)-1);
+        buf[sizeof(buf)-1] = '\0';
+        _trim_inplace(buf);
+        if (!buf[0]) strcpy(buf, "—");
+
+        char fit[24]; _fit24(buf, fit);
+        _updateStrIfChanged(_acTitle, sizeof(_acTitle), fit, set_var_v_ac_title);
+
+        _logAircraftIdentity();
+        _recomputeCapabilities();
+        break;
+      }
+
+      case DID_ATC_MODEL: {
+        const char* raw = (t >= 3 ? tok[2] : "");
+        strncpy(_rawAtcModel, raw ? raw : "", sizeof(_rawAtcModel)-1);
+        _rawAtcModel[sizeof(_rawAtcModel)-1] = '\0';
+
+        char cleaned[64];
+        _normalizeAtcModel(_rawAtcModel, cleaned, sizeof(cleaned));
+        char fit[24]; _fit24(cleaned, fit);
+        _updateStrIfChanged(_atcModel, sizeof(_atcModel), fit, set_var_v_atc_model);
+
+        _maybeSynthesizeTitle();   // if you added this earlier
+        _logAircraftIdentity();
+        _recomputeCapabilities();
+        break;
+      }
+
+      case DID_ICAO_TYPE: {
+        const char* raw = (t >= 3 ? tok[2] : "");
+        strncpy(_rawIcaoType, raw ? raw : "", sizeof(_rawIcaoType)-1);
+        _rawIcaoType[sizeof(_rawIcaoType)-1] = '\0';
+
+        char cleaned[16];
+        _normalizeIcaoDesignator(_rawIcaoType, cleaned, sizeof(cleaned));
+        char fit[24]; _fit24(cleaned, fit);
+        _updateStrIfChanged(_icaoType, sizeof(_icaoType), fit, set_var_v_icao_type);
+
+        _maybeSynthesizeTitle();   // if present
+        _logAircraftIdentity();
+        _recomputeCapabilities();
+        break;
+      }
+
+      // EXIT TYPE:1..12 (we only care that the index exists)
+      case DID_EXIT1_TYPE:   { _onExitPresence(1);  break; }
+      case DID_EXIT2_TYPE:   { _onExitPresence(2);  break; }
+      case DID_EXIT3_TYPE:   { _onExitPresence(3);  break; }
+      case DID_EXIT4_TYPE:   { _onExitPresence(4);  break; }
+      case DID_EXIT5_TYPE:   { _onExitPresence(5);  break; }
+      case DID_EXIT6_TYPE:   { _onExitPresence(6);  break; }
+      case DID_EXIT7_TYPE:   { _onExitPresence(7);  break; }
+      case DID_EXIT8_TYPE:   { _onExitPresence(8);  break; }
+      case DID_EXIT9_TYPE:   { _onExitPresence(9);  break; }
+      case DID_EXIT10_TYPE:  { _onExitPresence(10); break; }
+      case DID_EXIT11_TYPE:  { _onExitPresence(11); break; }
+      case DID_EXIT12_TYPE:  { _onExitPresence(12); break; }
+
+      case DID_GPU_AVAIL1: {
+        int v = (t >= 3) ? atoi(tok[2]) : 0;
+        _gpu1 = (v != 0);
+        _updateLiveGpu();
+        DBG.print("[CAP] GPU:1 avail="); DBG.println(_gpu1);
+        break;
+      }
+      case DID_GPU_AVAIL2: {
+        int v = (t >= 3) ? atoi(tok[2]) : 0;
+        _gpu2 = (v != 0);
+        _updateLiveGpu();
+        DBG.print("[CAP] GPU:2 avail="); DBG.println(_gpu2);
+        break;
+      }
+
+      case DID_PUSHBACK_AVAIL: {
+        int v = (t >= 3) ? atoi(tok[2]) : 0;
+        _setLiveCap(CAP_PUSHBACK, v != 0);
+        DBG.print("[CAP] PUSHBACK avail="); DBG.println(v);
+        break;
+      }
+
+      case DID_ATC_ON_PARKING: {
+        int v = (t >= 3) ? atoi(tok[2]) : 0;
+        DBG.print("[DBG] ATC ON PARKING SPOT="); DBG.println(v);
+        break;
+      }
+      
+      case DID_NUM_ENGINES: {
+        int n = (t >= 3) ? atoi(tok[2]) : 0;
+        _setLiveCap(CAP_AUTOSTART, n >= 1);   // live Autostart = any powered aircraft
+        DBG.print("[CAP] NUM ENGINES="); DBG.println(n);
+        break;
+      }
+
+      case DID_ENG1_COMB: { int v = (t>=3)? atoi(tok[2]) : 0; _setCombustion(1, v!=0); break; }
+      case DID_ENG2_COMB: { int v = (t>=3)? atoi(tok[2]) : 0; _setCombustion(2, v!=0); break; }
+      case DID_ENG3_COMB: { int v = (t>=3)? atoi(tok[2]) : 0; _setCombustion(3, v!=0); break; }
+      case DID_ENG4_COMB: { int v = (t>=3)? atoi(tok[2]) : 0; _setCombustion(4, v!=0); break; }
+      case DID_ENG5_COMB: { int v = (t>=3)? atoi(tok[2]) : 0; _setCombustion(5, v!=0); break; }
+      case DID_ENG6_COMB: { int v = (t>=3)? atoi(tok[2]) : 0; _setCombustion(6, v!=0); break; }
 
       default: break;
     }
@@ -483,6 +1066,43 @@ void SpadNextSerial::_doSubscriptions() {
   _subscribe(DID_TOTAL_WEIGHT_LBS, "SIMCONNECT:TOTAL WEIGHT");
   _subscribe(DID_OAT_C,            "SIMCONNECT:AMBIENT TEMPERATURE");
   _subscribe(DID_GPU_ON,           "SIMCONNECT:EXTERNAL POWER ON");
+
+  // Aircraft Info
+  _subscribe(DID_AC_TITLE,  "SIMCONNECT:TITLE");
+  _subscribe(DID_ATC_MODEL, "SIMCONNECT:ATC TYPE");   // e.g. "Boeing 737-800"
+  _subscribe(DID_ICAO_TYPE, "SIMCONNECT:ATC MODEL");  // e.g. "B738"
+  // Exits — widen the net; many airliners map extra doors >6
+  _subscribe(DID_EXIT1_TYPE,  "SIMCONNECT:EXIT TYPE:1");
+  _subscribe(DID_EXIT2_TYPE,  "SIMCONNECT:EXIT TYPE:2");
+  _subscribe(DID_EXIT3_TYPE,  "SIMCONNECT:EXIT TYPE:3");
+  _subscribe(DID_EXIT4_TYPE,  "SIMCONNECT:EXIT TYPE:4");
+  _subscribe(DID_EXIT5_TYPE,  "SIMCONNECT:EXIT TYPE:5");
+  _subscribe(DID_EXIT6_TYPE,  "SIMCONNECT:EXIT TYPE:6");
+  _subscribe(DID_EXIT7_TYPE,  "SIMCONNECT:EXIT TYPE:7");
+  _subscribe(DID_EXIT8_TYPE,  "SIMCONNECT:EXIT TYPE:8");
+  _subscribe(DID_EXIT9_TYPE,  "SIMCONNECT:EXIT TYPE:9");
+  _subscribe(DID_EXIT10_TYPE, "SIMCONNECT:EXIT TYPE:10");
+  _subscribe(DID_EXIT11_TYPE, "SIMCONNECT:EXIT TYPE:11");
+  _subscribe(DID_EXIT12_TYPE, "SIMCONNECT:EXIT TYPE:12");
+
+  // GPU — must pass an index (1 … and 2 for many airliners)
+  _subscribe(DID_GPU_AVAIL1,  "SIMCONNECT:EXTERNAL POWER AVAILABLE:1");
+  _subscribe(DID_GPU_AVAIL2,  "SIMCONNECT:EXTERNAL POWER AVAILABLE:2");
+
+  // Pushback — parking-dependent service
+  _subscribe(DID_PUSHBACK_AVAIL, "SIMCONNECT:PUSHBACK AVAILABLE");
+
+  // (optional) debug to confirm you’re actually on a parking spot
+  _subscribe(DID_ATC_ON_PARKING, "SIMCONNECT:ATC ON PARKING SPOT");
+
+  _subscribe(DID_NUM_ENGINES, "SIMCONNECT:NUMBER OF ENGINES");
+  // Engines combustion (1..6 covers most aircraft)
+  _subscribe(DID_ENG1_COMB, "SIMCONNECT:GENERAL ENG COMBUSTION:1");
+  _subscribe(DID_ENG2_COMB, "SIMCONNECT:GENERAL ENG COMBUSTION:2");
+  _subscribe(DID_ENG3_COMB, "SIMCONNECT:GENERAL ENG COMBUSTION:3");
+  _subscribe(DID_ENG4_COMB, "SIMCONNECT:GENERAL ENG COMBUSTION:4");
+  _subscribe(DID_ENG5_COMB, "SIMCONNECT:GENERAL ENG COMBUSTION:5");
+  _subscribe(DID_ENG6_COMB, "SIMCONNECT:GENERAL ENG COMBUSTION:6");
 
 }
 
@@ -752,3 +1372,122 @@ void SpadNextSerial::lightRecogToggle()   { if (!_allowSend(200)) return; _sendE
 void SpadNextSerial::lightWingToggle()    { if (!_allowSend(200)) return; _sendEvent("WING_LIGHTS_TOGGLE"); }
 void SpadNextSerial::lightLogoToggle()    { if (!_allowSend(200)) return; _sendEvent("LOGO_LIGHTS_TOGGLE"); }
 void SpadNextSerial::lightCabinToggle()   { if (!_allowSend(200)) return; _sendEvent("CABIN_LIGHTS_TOGGLE"); }
+
+// Aircraft Info helpers
+void SpadNextSerial::_trim_inplace(char* s) {
+  if (!s) return;
+  char* p = s;
+  while (*p==' '||*p=='\t'||*p=='\r'||*p=='\n') ++p;
+  if (p!=s) memmove(s,p,strlen(p)+1);
+  size_t n = strlen(s);
+  while (n && (s[n-1]==' '||s[n-1]=='\t'||s[n-1]=='\r'||s[n-1]=='\n')) s[--n]='\0';
+}
+
+void SpadNextSerial::_updateStrIfChanged(char* dst, size_t dstsz, const char* src,
+                                         void(*setter)(const char*)) {
+  char buf[128];
+  if (!src) src = "";
+  strncpy(buf, src, sizeof(buf)-1);
+  buf[sizeof(buf)-1] = '\0';
+  _trim_inplace(buf);
+  if (!buf[0]) strcpy(buf, "—");
+
+  if (strncmp(dst, buf, dstsz) != 0) {
+    strncpy(dst, buf, dstsz-1);
+    dst[dstsz-1] = '\0';
+    setter(buf);
+  }
+}
+
+// --- Rescan implementation
+void SpadNextSerial::forceRescanCaps() {
+  DBG.println("[CAP] Manual rescan requested");
+
+  // Clear identity caches (UI-facing)
+  _acTitle[0] = _atcModel[0] = _icaoType[0] = _profileName[0] = '\0';
+  set_var_v_ac_title("—");
+  set_var_v_atc_model("—");
+  set_var_v_icao_type("—");
+  set_var_v_profile_name("—");
+
+  // Clear RAW identity (prevents stale rule matches)
+  _rawAcTitle[0] = _rawAtcModel[0] = _rawIcaoType[0] = _rawProfileName[0] = '\0';
+
+  _engCombMask = 0;
+  _enginesRunning = false;
+  _updateAutostartWidget();   // reflect disabled state immediately
+  _updatePushbackWidget();
+  _updateGpuWidget();
+
+  // Baseline capabilities (all NO) until fresh data arrives
+  _exitSeenMask = 0;
+  _gpu1 = _gpu2 = false;
+  _capRulesMask = 0;
+  _capLiveMask  = 0;
+  _refreshCapabilitiesUI();
+
+  // Stop any lingering SCANSTATE re-ACK attempts (mirrors START)
+  _scanAckMs = 0;
+
+  // Re-run the normal subscribe burst (same as START / AIRCRAFTCHANGED)
+  _scheduleSubscribeBurst();
+}
+
+// --- C bridge so actions.c can call this
+extern SpadNextSerial spad;   // your global instance
+extern "C" void spad_force_rescan_caps(void) {
+  spad.forceRescanCaps();
+}
+
+void SpadNextSerial::_setCombustion(uint8_t idx, bool on) {
+  if (idx < 1 || idx > 6) return;
+  uint8_t bit = (1u << idx);
+
+  uint8_t prevMask = _engCombMask;
+  if (on)  _engCombMask |= bit;
+  else     _engCombMask &= ~bit;
+
+  bool prevRunning = _enginesRunning;
+  _enginesRunning = (_engCombMask != 0);
+
+  if (prevMask != _engCombMask || prevRunning != _enginesRunning) {
+    DBG.print("[GS] enginesRunning="); DBG.println(_enginesRunning ? 1 : 0);
+    _updateAutostartWidget();
+  }
+}
+
+void SpadNextSerial::_updateAutostartWidget() {
+  // Availability: CAP_AUTOSTART bit set in final mask
+  const bool available = ((_capMask & CAP_AUTOSTART) != 0);
+  const bool running   = _enginesRunning;
+
+  ui_state_t st = (available && !running) ? ui_state_t::Off
+                                          : ui_state_t::Disabled;
+
+  // Call your helper to color BOTH container and label
+  ui_set_state(GS_AUTOSTART_CNT, GS_AUTOSTART_LBL, st);
+}
+
+void SpadNextSerial::_updatePushbackWidget() {
+  // Availability comes from the final capability mask (live SimVar)
+  const bool available = (_capMask & CAP_PUSHBACK) != 0;
+
+  // cyan when available, grey when not
+  ui_state_t st = available ? ui_state_t::Off : ui_state_t::Disabled;
+
+  // paint BOTH container and label using your helper
+  ui_set_state(GS_PUSHBACK_CNT, GS_PUSHBACK_LBL, st);
+}
+
+void SpadNextSerial::_updateGpuWidget() {
+  const bool available = (_capMask & CAP_GPU) != 0;
+
+  // cyan when available, grey when not
+  ui_state_t st = available ? ui_state_t::Off : ui_state_t::Disabled;
+
+  // color BOTH the container and label
+  ui_set_state(GS_GPU_CNT, GS_GPU_LBL, st);
+
+  // (optional) debug
+  // DBG.print("[GS] GPU ui available="); DBG.println(available ? 1 : 0);
+}

@@ -50,6 +50,38 @@ public:
     DID_TOTAL_WEIGHT_LBS  = 405,   // SIMCONNECT:TOTAL WEIGHT (lbs)
     DID_OAT_C             = 406,              // SIMCONNECT:AMBIENT TEMPERATURE (°C)
     DID_GPU_ON            = 407,             // SIMCONNECT:EXTERNAL POWER ON (bool)
+    // Aircraft Info panels
+    DID_AC_TITLE  = 501, // SIMCONNECT:TITLE
+    DID_ATC_MODEL = 502, // SIMCONNECT:ATC TYPE   (full model name)
+    DID_ICAO_TYPE = 503, // SIMCONNECT:ATC MODEL  (ICAO type/designator)
+    // 504 intentionally unused (was profile dataref)
+    DID_EXIT1_TYPE     = 505,
+    DID_GPU_AVAIL1     = 506, // EXTERNAL POWER AVAILABLE:1
+    DID_PUSHBACK_AVAIL = 507, // PUSHBACK AVAILABLE (parking dependent)
+
+    DID_EXIT2_TYPE     = 508,
+    DID_EXIT3_TYPE     = 509,
+    DID_EXIT4_TYPE     = 510,
+    DID_EXIT5_TYPE     = 511,
+    DID_EXIT6_TYPE     = 512,
+
+    // add a few more exits + GPU:2 + a parking debug flag
+    DID_EXIT7_TYPE     = 513,
+    DID_EXIT8_TYPE     = 514,
+    DID_EXIT9_TYPE     = 515,
+    DID_EXIT10_TYPE    = 516,
+    DID_EXIT11_TYPE    = 517,
+    DID_EXIT12_TYPE    = 518,
+    DID_GPU_AVAIL2     = 519, // EXTERNAL POWER AVAILABLE:2
+    DID_ATC_ON_PARKING = 520, // ATC ON PARKING SPOT (debug)
+    DID_NUM_ENGINES = 521, // SIMCONNECT:NUMBER OF ENGINES
+    // Live engine combustion (to know if any engine is running)
+    DID_ENG1_COMB = 522, // SIMCONNECT:GENERAL ENG COMBUSTION:1
+    DID_ENG2_COMB = 523, // SIMCONNECT:GENERAL ENG COMBUSTION:2
+    DID_ENG3_COMB = 524, // SIMCONNECT:GENERAL ENG COMBUSTION:3
+    DID_ENG4_COMB = 525, // SIMCONNECT:GENERAL ENG COMBUSTION:4
+    DID_ENG5_COMB = 526, // SIMCONNECT:GENERAL ENG COMBUSTION:5
+    DID_ENG6_COMB = 527, // SIMCONNECT:GENERAL ENG COMBUSTION:6
   };
 
   using ChangeHandler = void (*)(DataId id, float value);
@@ -180,12 +212,34 @@ public:
   void setDeviceGuid(const char* guid);        // e.g. "{12345678-90AB-CDEF-1234-567890ABCDEF}"
   void setDeviceVersion(const char* version);  // e.g. "1.2.3"
 
+  // ---- Aircraft capability bitmask
+  enum : uint32_t {
+    CAP_PUSHBACK        = 1u << 0,
+    CAP_GPU             = 1u << 1,
+    CAP_GROUND_DEICE    = 1u << 2,
+    CAP_ANTIICE         = 1u << 3,
+    CAP_AUTOSTART       = 1u << 4,
+    CAP_MULTIPLE_EXITS  = 1u << 5,
+  };
+
+  void forceRescanCaps();
+  
 private:
   // --- internals ---
   void _processMessage(char* msg);
   
   uint32_t _lastSendMs = 0;   // shared timestamp
   bool _allowSend(uint32_t intervalMs);
+
+  // Engine running state
+  uint8_t _engCombMask = 0;   // bits set for engines with combustion=1 (idx 1..6)
+  bool    _enginesRunning = false;
+
+  void _setCombustion(uint8_t idx, bool on);
+  void _updateAutostartWidget();  // pushes GS Autostart widget's UI state
+  void _updatePushbackWidget();
+  void _updateGpuWidget();
+
 
   inline void _markStartedIfNeeded(const char* why) {
     if (!_started) {
@@ -196,10 +250,52 @@ private:
     }
   }
 
+  uint32_t _capMask = 0;        // final = rules OR live
+  uint32_t _capRulesMask = 0;   // from identity/profile rules
+  uint32_t _capLiveMask  = 0;   // from live SimVars
+  // track multiple-exit presence and GPU aggregation
+  uint8_t  _exitSeenMask = 0;  // bits 1..12 when we’ve seen that index
+  bool     _gpu1 = false, _gpu2 = false;
+  void     _onExitPresence(uint8_t idx);
+  void     _updateLiveGpu();   // OR(_gpu1,_gpu2) -> CAP_GPU
+  void _onExitTypeUpdate(uint8_t idx, int typ);
+
+  void _recomputeCapabilities();    // recompute _capRulesMask
+  void _emitCapabilitiesToUI();     // push to LVGL
+  void _refreshCapabilitiesUI();    // combine & emit-on-change
+  void _setLiveCap(uint32_t bit, bool on);
+  
+  // UI-facing, short/fitted
+  char _profileName[24] = {0};   // keep a bit longer internally
+
+  // Raw (for future logic if needed)
+  char _rawProfileName[64] = {0};
+
   uint16_t _subPaceCount = 0;  // counts subscribe lines in the current burst
   bool _needStateDump = false;   // defer SCANSTATE dump
   uint32_t _scanAckMs   = 0;   // when we last ACKed SCANSTATE
   uint8_t  _scanAckRetry = 0;  // how many times we've re-ACKed
+
+  char _acTitle[96] = {0};
+  char _atcModel[64] = {0};
+  char _icaoType[24] = {0};
+
+  // Raw (as received) — keep for capability lookups later
+  char _rawAcTitle[96]  = {0};
+  char _rawAtcModel[96] = {0};
+  char _rawIcaoType[48] = {0};
+
+  // Throttled identity logger
+  uint32_t _lastIdLogMs = 0;
+  void _logAircraftIdentity();
+
+  void _maybeSynthesizeTitle();
+
+  void _updateStrIfChanged(char* dst, size_t dstsz, const char* src,
+                           void(*setter)(const char*));
+  static void _trim_inplace(char* s);
+
+  uint32_t _lastAcChangeMs = 0; // debounce AIRCRAFTCHANGED -> subscribe burst
 
   bool _didSubscribe = false;
   float _apHdgDeg       = NAN;
